@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="apkspy.$APPLICATION_ID">
+
+    <application
+        android:allowBackup="true"
+        android:label="apkSpy"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <uses-library android:name="org.apache.http.legacy" android:required="false" />
+    </application>
+</manifest>
