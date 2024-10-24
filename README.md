@@ -17,15 +17,6 @@ Currently, this plugin is in a proof of concept state. Some featured of the orig
 
 JDK 11 or higher must be installed.
 
-This plugin has a compile dependency to "jadx-gui" which is not available as a library. Therefore, you have to build "jadx-gui" as a library:
-
-```bash
-git clone https://github.com/nitram84/jadx.git
-cd jadx
-git checkout jadx_gui_lib
-JADX_VERSION="1.5.1-SNAPSHOT" ./gradlew publishToMavenLocal
-```
-
 Build the plugin:
 
 ```bash

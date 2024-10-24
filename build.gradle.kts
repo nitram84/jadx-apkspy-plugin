@@ -11,12 +11,12 @@ plugins {
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.18"
-	id("com.github.ben-manes.versions") version "0.50.0"
+	id("com.github.ben-manes.versions") version "0.51.0"
 }
 
 dependencies {
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-core:1.5.1-20240929.211704-2") {
+	compileOnly("io.github.skylot:jadx-core:1.5.1-SNAPSHOT") {
 		isChanging = true
 	}
 	compileOnly("io.github.skylot:jadx-gui:1.5.1-SNAPSHOT") {
@@ -27,7 +27,7 @@ dependencies {
 	compileOnly("com.fifesoft:rsyntaxtextarea:3.4.1")
 	compileOnly("org.apache.commons:commons-lang3:3.17.0")
 	compileOnly("commons-io:commons-io:2.17.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.8")
+	compileOnly("ch.qos.logback:logback-classic:1.5.9")
 
 	// use same versions as in jadx-java-input
 	implementation("org.ow2.asm:asm:9.7")
@@ -37,10 +37,10 @@ dependencies {
 	implementation("com.github.javaparser:javaparser-core:3.25.10")
 
 	testImplementation("org.apache.commons:commons-lang3:3.17.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.8")
-	testImplementation("org.assertj:assertj-core:3.24.2")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+	testImplementation("ch.qos.logback:logback-classic:1.5.9")
+	testImplementation("org.assertj:assertj-core:3.26.3")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.2")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.2")
 }
 
 allprojects {
