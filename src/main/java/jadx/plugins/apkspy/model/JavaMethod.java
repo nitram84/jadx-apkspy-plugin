@@ -4,20 +4,22 @@ public class JavaMethod {
 	private String comments;
 	private String method;
 
-	public JavaMethod(String content) {
-		String comments = "";
-		String method = "";
+	public JavaMethod(final String content) {
+		final StringBuilder comments = new StringBuilder();
+		final StringBuilder method = new StringBuilder();
 
-		for (String line : content.split("\n")) {
-			if (!line.startsWith(" ") && line.startsWith("/*")) {
-				comments += line + "\n";
+		boolean isCommentBlock = false;
+		for (final String line : content.split("\n")) {
+			if (isCommentBlock || (!line.startsWith(" ") && line.startsWith("/*"))) {
+				comments.append(line).append('\n');
+				isCommentBlock = !line.contains("*/");
 			} else {
-				method += line + "\n";
+				method.append(line).append('\n');
 			}
 		}
 
-		this.comments = comments.trim();
-		this.method = method.trim();
+		this.comments = comments.toString().trim();
+		this.method = method.toString().trim();
 	}
 
 	public String getComments() {
@@ -37,7 +39,7 @@ public class JavaMethod {
 	}
 
 	public String getHeader() {
-		return this.method.split("\n")[0].trim();
+		return this.method.substring(0, this.method.indexOf('{') + 1);
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import jadx.plugins.apkspy.model.DiffMatchPatch.Diff;
 
 public class ClassBreakdown implements Cloneable {
+	public static final int BLOCK_STATIC = 4;
 	private String className;
 	private String simpleName;
 	private String imports;
@@ -64,6 +65,9 @@ public class ClassBreakdown implements Cloneable {
 						}
 						currentBlock = "";
 						blockType = 0;
+					} else if (line.trim().equals("static {")) {
+						currentBlock = "";
+						blockType = BLOCK_STATIC;
 					} else if (line.trim().equals("};") && blockType == 3) {
 						memberVariables += currentBlock + "};\n";
 						currentBlock = "";
