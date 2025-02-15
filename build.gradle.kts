@@ -16,31 +16,27 @@ plugins {
 
 dependencies {
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-core:1.5.1-SNAPSHOT") {
-		isChanging = true
-	}
-	compileOnly("io.github.skylot:jadx-gui:1.5.1-SNAPSHOT") {
-		isChanging = true
-	}
+	compileOnly("io.github.skylot:jadx-core:1.5.1")
+	compileOnly("io.github.skylot:jadx-gui:1.5.1")
 
 	// use same versions as jadx-gui
-	compileOnly("com.fifesoft:rsyntaxtextarea:3.4.1")
+	compileOnly("com.fifesoft:rsyntaxtextarea:3.5.3")
 	compileOnly("org.apache.commons:commons-lang3:3.17.0")
-	compileOnly("commons-io:commons-io:2.17.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.9")
+	compileOnly("commons-io:commons-io:2.18.0")
+	compileOnly("ch.qos.logback:logback-classic:1.5.12")
 
-	// use same versions as in jadx-java-input
-	implementation("org.ow2.asm:asm:9.7")
-	implementation("org.ow2.asm:asm-tree:9.7")
+	// use same versions as in jadx-java-convert
+	compileOnly("org.ow2.asm:asm:9.7.1")
+	implementation("org.ow2.asm:asm-tree:9.7.1")
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.22")
-	implementation("com.github.javaparser:javaparser-core:3.25.10")
+	implementation("de.femtopedia.dex2jar:dex-tools:2.4.24")
+	implementation("com.github.javaparser:javaparser-core:3.26.3")
 
 	testImplementation("org.apache.commons:commons-lang3:3.17.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.9")
+	testImplementation("ch.qos.logback:logback-classic:1.5.12")
 	testImplementation("org.assertj:assertj-core:3.26.3")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.2")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.3")
 }
 
 allprojects {
