@@ -66,7 +66,7 @@ public abstract class ApkSpyDialog extends JDialog {
 		content.add(scroll2);
 
 		final JButton save = new JButton("Save");
-		save.addActionListener(e -> wrapOnSave());
+		save.addActionListener(e -> doSave());
 		final JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(e -> dispose());
 		final JButton compile = new JButton("Compile");
@@ -123,7 +123,7 @@ public abstract class ApkSpyDialog extends JDialog {
 		}
 	}
 
-	private void wrapOnSave() {
+	private void doSave() {
 		try {
 			onSave();
 			dispose();

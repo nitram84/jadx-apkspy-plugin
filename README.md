@@ -2,16 +2,24 @@
 
 This plugin for JADX adds support for editing Java source code of APK's, and then recompiling them. The JADX ApkSpy plugin is a port of the work of @LucasBaizer (https://github.com/LucasBaizer/apkSpy).
 
+### Features
+
+* Edit methods in JADX
+* Add new classes
+* Export changes as modified APK
+
 ### Limitations
 
-Currently, this plugin is in a proof of concept state. Some featured of the original fork like adding or deleting classes, i18n, ... are not yet ported.
+Currently, this plugin is in a proof of concept state. Some features of the original fork like deleting classes, i18n, ... are not yet ported.
 
 #### Workarounds needed to recompile sources and to rebuild an APK
 
 * It is necessary to set the "Code cache mode" to 'MEMORY' in preferences in order to recompile modified classes. Other cache modes are not yet supported
 * Obfuscation and renaming features can not be used together with this plugin.
-* Only methods are editable. Adding or deleting methods is not supported yet.
+* Only methods are editable. Deleting methods is not supported yet.
 * Classes within the android.* packages cannot be edited.
+* Adding classes is only possible when "Code cache mode" is set to 'MEMORY' in preferences.
+* Changes to source code have to be saved externally - this plugin saves changes as modified APK.
 
 ### Building Jadx ApkSpy plugin from source
 
@@ -23,6 +31,8 @@ Build the plugin:
 git clone https://github.com/nitram84/jadx-apkspy-plugin.git
 cd jadx-apkspy-plugin.
 ./gradlew shadowJar
+# Install plugin
+cp build/dist/jadx-apkspy-plugin-dev.jar ~/.config/jadx/plugins/dropins/
 ```
 
 (on Windows, use gradlew.bat instead of ./gradlew)
@@ -47,7 +57,7 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 
 ### Install
 
-This plugin requires JADX in a version greater than 1.5.0. Use the latest unstable build of JADX or latest git version if possible.
+This plugin requires JADX in a version 1.5.2 or greater. Use the latest unstable build of JADX or latest git version if possible.
 
 Install using location id: `github:nitram84:jadx-apkspy-plugin`
 

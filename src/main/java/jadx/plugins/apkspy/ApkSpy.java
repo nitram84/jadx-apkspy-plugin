@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -271,7 +272,8 @@ public class ApkSpy {
 												.substring(smaliFolder.toAbsolutePath().toString().length())
 												.replace("ApkSpy_", ""));
 								Files.createDirectories(equivalent.getParent());
-								Files.copy(path, equivalent);
+								Files.writeString(equivalent, modifiedContent, StandardOpenOption.CREATE,
+										StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 							}
 						} catch (IOException e) {
 							e.printStackTrace();

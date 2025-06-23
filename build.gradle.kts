@@ -6,8 +6,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
 	`java-library`
 
-	id("com.github.johnrengelman.shadow") version "8.1.1"
-	id("com.diffplug.spotless") version "6.25.0"
+	id("com.gradleup.shadow") version "8.3.6"
+	id("com.diffplug.spotless") version "7.0.4"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.18"
@@ -16,27 +16,28 @@ plugins {
 
 dependencies {
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-core:1.5.1")
-	compileOnly("io.github.skylot:jadx-gui:1.5.1")
+	compileOnly("io.github.skylot:jadx-core:1.5.2")
+	compileOnly("io.github.skylot:jadx-gui:1.5.2")
 
 	// use same versions as jadx-gui
-	compileOnly("com.fifesoft:rsyntaxtextarea:3.5.3")
+	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.0")
 	compileOnly("org.apache.commons:commons-lang3:3.17.0")
-	compileOnly("commons-io:commons-io:2.18.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.12")
+	compileOnly("commons-io:commons-io:2.19.0")
+	compileOnly("ch.qos.logback:logback-classic:1.5.18")
 
 	// use same versions as in jadx-java-convert
-	compileOnly("org.ow2.asm:asm:9.7.1")
-	implementation("org.ow2.asm:asm-tree:9.7.1")
+	compileOnly("org.ow2.asm:asm:9.8")
+	implementation("org.ow2.asm:asm-tree:9.8")
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.24")
-	implementation("com.github.javaparser:javaparser-core:3.26.3")
+	implementation("de.femtopedia.dex2jar:dex-tools:2.4.28")
+	implementation("com.github.javaparser:javaparser-core:3.26.4")
 
 	testImplementation("org.apache.commons:commons-lang3:3.17.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.12")
+	testImplementation("ch.qos.logback:logback-classic:1.5.18")
 	testImplementation("org.assertj:assertj-core:3.26.3")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.3")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.1")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.13.1")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.13.1")
 }
 
 allprojects {

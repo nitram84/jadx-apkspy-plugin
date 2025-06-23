@@ -1,8 +1,11 @@
 package jadx.plugins.apkspy.ui;
 
+import jadx.api.impl.InMemoryCodeCache;
 import jadx.api.plugins.JadxPluginContext;
 import jadx.api.plugins.gui.JadxGuiContext;
 import jadx.core.dex.nodes.MethodNode;
+import jadx.gui.treemodel.JClass;
+import jadx.gui.treemodel.JPackage;
 import jadx.plugins.apkspy.ApkSpyOptions;
 import jadx.plugins.apkspy.utils.Util;
 
@@ -35,6 +38,20 @@ public class ApkSpyUI {
 						}
 					}
 				});
+
+		// Adding classes is not (yet) supported by disk cache
+		if (context.getArgs().getCodeCache() instanceof InMemoryCodeCache) {
+			guiContext.addTreePopupMenuEntry("Add class",
+					node -> node instanceof JPackage,
+					node -> {
+						final String uniqueClassName = generateClassName((JPackage) node, "MyClass");
+						final String clsTemplate = "package " + node.getName() + ";\n\npublic class " + uniqueClassName + " {\n}\n";
+
+						final AddClassDialog dialog = new AddClassDialog(guiContext.getMainFrame(), options, node, context.getDecompiler());
+						dialog.setCodeAreaContent(clsTemplate);
+						dialog.setVisible(true);
+					});
+		}
 	}
 
 	private static String extractMethod(String text, int offset) {
@@ -74,5 +91,33 @@ public class ApkSpyUI {
 		}
 
 		return null;
+	}
+
+	private static String generateClassName(final JPackage node, final String className) {
+		boolean found = true;
+		for (final JClass cls : node.getClasses()) {
+			if (cls.getCls().getName().equals(className)) {
+				found = false;
+				break;
+			}
+		}
+		if (found) {
+			return className;
+		} else {
+			int i = 0;
+			while (true) {
+				found = true;
+				i++;
+				for (final JClass cls : node.getClasses()) {
+					if (cls.getCls().getName().equals(className + i)) {
+						found = false;
+						break;
+					}
+				}
+				if (found) {
+					return className + i;
+				}
+			}
+		}
 	}
 }
