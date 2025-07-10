@@ -14,6 +14,9 @@ public class ChangeCache {
 	}
 
 	public static void putChange(String className, ClassBreakdown content, JavaMethod method) {
+		if (method == null && CHANGES.containsKey(className)) {
+			CHANGES.remove(className, CHANGES.get(className));
+		}
 		if (CHANGES.containsKey(className)) {
 			ClassBreakdown original = CHANGES.get(className);
 

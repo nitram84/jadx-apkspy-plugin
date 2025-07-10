@@ -184,6 +184,9 @@ public class ClassBreakdown implements Cloneable {
 	}
 
 	public ClassBreakdown addOrReplaceMethod(JavaMethod newMethod) {
+		if (newMethod == null) {
+			return this;
+		}
 		ClassBreakdown clone = new ClassBreakdown(this);
 
 		String header = newMethod.getHeader();
