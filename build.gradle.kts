@@ -16,6 +16,7 @@ plugins {
 
 dependencies {
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
+	compileOnly("io.github.skylot:jadx-cli:1.5.2")
 	compileOnly("io.github.skylot:jadx-core:1.5.2")
 	compileOnly("io.github.skylot:jadx-gui:1.5.2")
 

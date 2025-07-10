@@ -5,7 +5,9 @@ import jadx.api.plugins.JadxPluginContext;
 import jadx.api.plugins.gui.JadxGuiContext;
 import jadx.core.dex.nodes.MethodNode;
 import jadx.gui.treemodel.JClass;
+import jadx.gui.treemodel.JNode;
 import jadx.gui.treemodel.JPackage;
+import jadx.gui.treemodel.JSources;
 import jadx.plugins.apkspy.ApkSpyOptions;
 import jadx.plugins.apkspy.utils.Util;
 
@@ -39,13 +41,25 @@ public class ApkSpyUI {
 					}
 				});
 
-		// Adding classes is not (yet) supported by disk cache
+		// Adding packages and classes is not (yet) supported by disk cache
 		if (context.getArgs().getCodeCache() instanceof InMemoryCodeCache) {
+			guiContext.addTreePopupMenuEntry("Add package",
+					node -> node instanceof JSources || node instanceof JPackage,
+					node -> {
+						guiContext.uiRun(() -> {
+							final AddPackageDialog dialog =
+									new AddPackageDialog(guiContext.getMainFrame(), (JNode) node, context.getDecompiler());
+							dialog.setVisible(true);
+						});
+					});
+
 			guiContext.addTreePopupMenuEntry("Add class",
 					node -> node instanceof JPackage,
 					node -> {
-						final String uniqueClassName = generateClassName((JPackage) node, "MyClass");
-						final String clsTemplate = "package " + node.getName() + ";\n\npublic class " + uniqueClassName + " {\n}\n";
+						JPackage packageNode = (JPackage) node;
+						final String uniqueClassName = generateClassName(packageNode, "MyClass");
+						final String clsTemplate =
+								"package " + packageNode.getPkg().getFullName() + ";\n\npublic class " + uniqueClassName + " {\n}\n";
 
 						final AddClassDialog dialog = new AddClassDialog(guiContext.getMainFrame(), options, node, context.getDecompiler());
 						dialog.setCodeAreaContent(clsTemplate);
