@@ -33,6 +33,9 @@ dependencies {
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.28")
 	implementation("com.github.javaparser:javaparser-core:3.26.4")
 
+	testImplementation("io.github.skylot:jadx-cli:1.5.2")
+	testImplementation("io.github.skylot:jadx-core:1.5.2")
+
 	testImplementation("org.apache.commons:commons-lang3:3.17.0")
 	testImplementation("ch.qos.logback:logback-classic:1.5.18")
 	testImplementation("org.assertj:assertj-core:3.26.3")

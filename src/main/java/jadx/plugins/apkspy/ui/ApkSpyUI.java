@@ -5,11 +5,12 @@ import jadx.api.plugins.JadxPluginContext;
 import jadx.api.plugins.gui.JadxGuiContext;
 import jadx.core.dex.nodes.MethodNode;
 import jadx.gui.treemodel.JClass;
+import jadx.gui.treemodel.JMethod;
 import jadx.gui.treemodel.JNode;
 import jadx.gui.treemodel.JPackage;
 import jadx.gui.treemodel.JSources;
 import jadx.plugins.apkspy.ApkSpyOptions;
-import jadx.plugins.apkspy.utils.Util;
+import jadx.plugins.apkspy.utils.MethodExtractorUtils;
 
 import static jadx.api.metadata.ICodeAnnotation.AnnType;
 
@@ -26,7 +27,7 @@ public class ApkSpyUI {
 							String code = context.getDecompiler().getRoot().getCodeCache()
 									.getCode(methodNode.getMethodInfo().getDeclClass().getFullName());
 
-							String determinedContent = extractMethod(code, iCodeNodeRef.getDefPosition());
+							String determinedContent = MethodExtractorUtils.extractMethod(code, iCodeNodeRef.getDefPosition());
 
 							if (determinedContent != null) {
 								guiContext.uiRun(() -> {
@@ -38,6 +39,34 @@ public class ApkSpyUI {
 								});
 							}
 						}
+					}
+				});
+
+		guiContext.addTreePopupMenuEntry("Edit method",
+				node -> node instanceof JMethod,
+				node -> {
+					final JMethod method = (JMethod) node;
+					final JClass parent = ((JMethod) node).getJParent();
+
+					final String code = context.getDecompiler().getRoot().getCodeCache()
+							.getCode(parent.getFullName());
+
+					try {
+						int pos = MethodExtractorUtils.findMethodPosition(method.getJavaMethod(), code);
+						if (pos > -1) {
+							final String determinedContent = MethodExtractorUtils.extractMethod(code, pos);
+
+							if (determinedContent != null) {
+								guiContext.uiRun(() -> {
+									final EditMethodDialog dialog =
+											new EditMethodDialog(guiContext.getMainFrame(), options, context.getDecompiler(),
+													method.getJavaMethod().getMethodNode(), "Edit Method");
+									dialog.setCodeAreaContent(determinedContent);
+									dialog.setVisible(true);
+								});
+							}
+						}
+					} catch (final Exception ignore) { // e.g. constructor nodes without code -> no error
 					}
 				});
 
@@ -66,45 +95,6 @@ public class ApkSpyUI {
 						dialog.setVisible(true);
 					});
 		}
-	}
-
-	private static String extractMethod(String text, int offset) {
-		String[] lines = text.split(System.getProperty("line.separator"));
-		StringBuilder extraction = new StringBuilder();
-
-		int linePos = 0;
-		for (String line : lines) {
-			int start = linePos;
-
-			linePos += line.length();
-			linePos += System.getProperty("line.separator").length();
-
-			String str = line.trim();
-			if (str.isEmpty()) {
-				continue;
-			}
-			if (!line.startsWith("    ")) {
-				if (str.startsWith("package ")) {
-					str += "\n";
-				} else if (str.contains("class ")) {
-					str = "\n" + str;
-				}
-
-				extraction.append(str).append('\n');
-			}
-
-			if (line.startsWith("    ") && !line.startsWith("     ") && str.endsWith("{")) {
-				int closing = Util.findClosingBracket(text, start + line.lastIndexOf('{'));
-				if (offset > start && offset < closing) {
-					String method = text.substring(start, closing);
-					extraction.append(method);
-					extraction.append("}\n}\n");
-					return extraction.toString();
-				}
-			}
-		}
-
-		return null;
 	}
 
 	private static String generateClassName(final JPackage node, final String className) {
