@@ -1,9 +1,5 @@
 package jadx.plugins.apkspy.model;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,9 +8,7 @@ import jadx.api.JadxDecompiler;
 import jadx.api.JavaClass;
 import jadx.plugins.apkspy.utils.MethodExtractorUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class MethodExtractorUtilsTest {
+public class MethodExtractorUtilsTest extends SmaliSourceTest {
 
 	@Test
 	public void findMethodPositionTest() throws Exception {
@@ -49,11 +43,5 @@ public class MethodExtractorUtilsTest {
 					"    }\n" +
 					"}\n", MethodExtractorUtils.extractMethod(code, pos));
 		}
-	}
-
-	private File getSampleFile(final String fileName) throws URISyntaxException {
-		final URL file = getClass().getClassLoader().getResource("samples/" + fileName);
-		assertThat(file).isNotNull();
-		return new File(file.toURI());
 	}
 }

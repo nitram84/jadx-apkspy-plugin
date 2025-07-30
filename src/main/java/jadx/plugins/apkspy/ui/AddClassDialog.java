@@ -54,7 +54,7 @@ public class AddClassDialog extends ApkSpyDialog {
 		packageNode.update();
 		((MainWindow) mainWindow).reloadTree();
 
-		ChangeCache.putChange(breakdown.getFullName(), breakdown, null);
+		ChangeCache.getInstance().putChange(breakdown.getFullName(), breakdown, null);
 	}
 
 	@Override

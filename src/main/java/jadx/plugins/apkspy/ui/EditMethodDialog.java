@@ -45,7 +45,7 @@ public class EditMethodDialog extends ApkSpyDialog {
 		final ClassBreakdown completed = original.mergeImports(changed.getImports())
 				.mergeMethods(changed.getChangedMethods());
 
-		ChangeCache.putChange(clsNode.getFullName(), this.merge(changed, original), changed.getMethods().get(0));
+		ChangeCache.getInstance().putChange(clsNode.getFullName(), this.merge(changed, original), changed.getMethods().get(0));
 
 		decompiler.getRoot().getCodeCache().add(clsNode.getFullName(),
 				new SimpleCodeInfo(completed.toString()));

@@ -6,11 +6,12 @@ This plugin for JADX adds support for editing Java source code of APK's, and the
 
 * Edit methods in JADX
 * Add new classes
+* Delete classes
 * Export changes as modified APK
 
 ### Limitations
 
-Currently, this plugin is in a proof of concept state. Some features of the original fork like deleting classes, i18n, ... are not yet ported.
+Currently, this plugin is in a proof of concept state.
 
 #### Workarounds needed to recompile sources and to rebuild an APK
 

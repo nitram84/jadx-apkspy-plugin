@@ -14,12 +14,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jadx.plugins.apkspy.model.ChangeCache;
 import jadx.plugins.apkspy.model.ClassBreakdown;
 import jadx.plugins.apkspy.model.SmaliBreakdown;
 import jadx.plugins.apkspy.model.SmaliMethod;
@@ -118,7 +120,7 @@ public class ApkSpy {
 
 	public static boolean merge(String apk, String outputLocation, String sdkPath, String jdkLocation, String apktoolLocation,
 			String applicationId,
-			Map<String, ClassBreakdown> classes, List<String> deletions, OutputStream out)
+			OutputStream out)
 			throws IOException, InterruptedException {
 		sdkPath = sdkPath.replace("\\", "\\\\");
 
@@ -145,6 +147,7 @@ public class ApkSpy {
 
 		Files.write(manifestPath, manifest.getBytes(StandardCharsets.UTF_8));
 
+		Map<String, ClassBreakdown> classes = ChangeCache.getInstance().getChanges();
 		for (Map.Entry<String, ClassBreakdown> entry : classes.entrySet()) {
 			String className = entry.getKey();
 			ClassBreakdown content = entry.getValue();
@@ -203,17 +206,6 @@ public class ApkSpy {
 				.collect(Collectors.toList());
 		List<Path> destinationFolders = smaliFolders.stream()
 				.map(path -> Paths.get(path.toString().replace("generated", "original"))).collect(Collectors.toList());
-
-		for (String deletion : deletions) {
-			// file might not exist, as we could delete temporary classes that we made in
-			// between compilations in the editor
-			for (Path path : smaliFolders) {
-				if (Files.deleteIfExists(Paths.get(path.toAbsolutePath().toString(),
-						deletion.replace('.', File.separatorChar) + ".smali"))) {
-					break;
-				}
-			}
-		}
 
 		for (Path smaliFolder : smaliFolders) {
 			LOG.info("Searching through: {}", smaliFolder);
@@ -280,6 +272,19 @@ public class ApkSpy {
 							System.exit(1);
 						}
 					});
+		}
+
+		Set<String> deletions = ChangeCache.getInstance().getClassDeletions();
+		for (String deletion : deletions) {
+			// file might not exist, as we could delete temporary classes that we made in
+			// between compilations in the editor
+
+			for (Path path : destinationFolders) {
+				if (Files.deleteIfExists(Paths.get(path.toAbsolutePath().toString(),
+						deletion))) {
+					break;
+				}
+			}
 		}
 
 		ApktoolWrapper.build(Paths.get("smali", "original"), apktoolLocation, jdkLocation, outputLocation, out);

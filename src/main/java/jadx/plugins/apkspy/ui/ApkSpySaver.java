@@ -70,7 +70,7 @@ public class ApkSpySaver extends JDialog {
 					ex.printStackTrace();
 				}
 
-				if (ChangeCache.getChanges().size() == 0) {
+				if (!ChangeCache.getInstance().hasChanges()) {
 					JOptionPane.showMessageDialog(mainWindow,
 							"No changes have been made!", "apkSpy", JOptionPane.ERROR_MESSAGE);
 					return;
@@ -87,8 +87,7 @@ public class ApkSpySaver extends JDialog {
 						try {
 							boolean success = ApkSpy.merge(inputApkFilename,
 									saveLocation.getText(), options.getAndroidSdkPath(), options.getJdkLocation(),
-									options.getApktoolLocation(), "jadx",
-									ChangeCache.getChanges(), ChangeCache.getClassDeletions(), new OutputStream() {
+									options.getApktoolLocation(), "jadx", new OutputStream() {
 										@Override
 										public void write(int b) throws IOException {
 											System.out.print((char) b);
