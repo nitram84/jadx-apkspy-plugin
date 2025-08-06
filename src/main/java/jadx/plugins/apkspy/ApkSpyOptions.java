@@ -18,7 +18,7 @@ public class ApkSpyOptions extends BasePluginOptionsBuilder {
 				.setter(v -> androidSdkPath = v);
 
 		strOption(ApkSpyPlugin.PLUGIN_ID + ".jdkLocation.path")
-				.description("JDK location (Java 8)")
+				.description("JDK location (Java 17 or greater)")
 				.defaultValue("")
 				.setter(v -> jdkLocation = v);
 

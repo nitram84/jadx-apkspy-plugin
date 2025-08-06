@@ -141,12 +141,6 @@ public class ApkSpy {
 
 		Files.write(gradleBuildPath, buildGradle.getBytes(StandardCharsets.UTF_8));
 
-		Path manifestPath = Paths.get("project-tmp", "app", "src", "main", "AndroidManifest.xml");
-		String manifest = new String(Files.readAllBytes(manifestPath), StandardCharsets.UTF_8);
-		manifest = manifest.replace("$APPLICATION_ID", applicationId);
-
-		Files.write(manifestPath, manifest.getBytes(StandardCharsets.UTF_8));
-
 		Map<String, ClassBreakdown> classes = ChangeCache.getInstance().getChanges();
 		for (Map.Entry<String, ClassBreakdown> entry : classes.entrySet()) {
 			String className = entry.getKey();
@@ -289,6 +283,8 @@ public class ApkSpy {
 
 		ApktoolWrapper.build(Paths.get("smali", "original"), apktoolLocation, jdkLocation, outputLocation, out);
 		Util.attemptDelete(new File("smali"));
+
+		Files.delete(stubPath);
 
 		out.write("Finished creating APK!".getBytes(StandardCharsets.UTF_8));
 		return true;

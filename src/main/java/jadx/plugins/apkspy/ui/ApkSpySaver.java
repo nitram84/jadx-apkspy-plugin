@@ -7,7 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import javax.swing.JButton;
@@ -97,9 +96,6 @@ public class ApkSpySaver extends JDialog {
 							if (success) {
 								JOptionPane.showMessageDialog(mainWindow,
 										"Successfully created APK!", "apkSpy", JOptionPane.INFORMATION_MESSAGE);
-								Files.delete(Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy",
-										inputApkFilename.replace('.', '_')
-												+ "stub.jar"));
 								dispose();
 							} else {
 								cancel.setEnabled(true);

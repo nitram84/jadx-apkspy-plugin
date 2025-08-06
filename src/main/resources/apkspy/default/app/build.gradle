@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     useLibrary 'org.apache.http.legacy'
+	namespace 'apkspy.$APPLICATION_ID'
     defaultConfig {
         applicationId "apkspy.$APPLICATION_ID"
         minSdkVersion 23
@@ -10,9 +11,12 @@ android {
         versionCode 1
         versionName "1.0"
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+	lintOptions {
+		abortOnError false
+	}
+	compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     buildTypes {
         release {
