@@ -7,7 +7,7 @@ plugins {
 	`java-library`
 
 	id("com.gradleup.shadow") version "9.3.1"
-	id("com.diffplug.spotless") version "7.0.4"
+	id("com.diffplug.spotless") version "8.2.1"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
