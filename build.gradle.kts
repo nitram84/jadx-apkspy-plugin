@@ -16,9 +16,9 @@ plugins {
 
 dependencies {
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-cli:1.5.3")
-	compileOnly("io.github.skylot:jadx-core:1.5.3")
-	compileOnly("io.github.skylot:jadx-gui:1.5.3")
+	compileOnly("io.github.skylot:jadx-cli:1.5.4")
+	compileOnly("io.github.skylot:jadx-core:1.5.4")
+	compileOnly("io.github.skylot:jadx-gui:1.5.4")
 
 	// use same versions as jadx-gui
 	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.0")
@@ -33,8 +33,8 @@ dependencies {
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.34")
 	implementation("com.github.javaparser:javaparser-core:3.26.4")
 
-	testImplementation("io.github.skylot:jadx-cli:1.5.3")
-	testImplementation("io.github.skylot:jadx-core:1.5.3")
+	testImplementation("io.github.skylot:jadx-cli:1.5.4")
+	testImplementation("io.github.skylot:jadx-core:1.5.4")
 
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
 	testImplementation("ch.qos.logback:logback-classic:1.5.22")
