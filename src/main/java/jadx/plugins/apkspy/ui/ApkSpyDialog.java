@@ -23,6 +23,7 @@ import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.Problem;
 
 import jadx.api.JadxDecompiler;
+import jadx.gui.ui.MainWindow;
 import jadx.plugins.apkspy.ApkSpy;
 import jadx.plugins.apkspy.ApkSpyOptions;
 import jadx.plugins.apkspy.model.ClassBreakdown;
@@ -51,6 +52,7 @@ public abstract class ApkSpyDialog extends JDialog {
 		final JPanel content = new JPanel();
 
 		this.codeArea = new ApkSpyCodeArea();
+		this.codeArea.setFont(((MainWindow) mainWindow).getSettings().getCodeFont());
 		final RTextScrollPane codeScrollPane = new RTextScrollPane(codeArea);
 
 		codeScrollPane.setPreferredSize(new Dimension(800, 600));
