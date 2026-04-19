@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ public class ApkSpy {
 		File platformDir = new File(sdkPath, "platforms");
 		if (platformDir.exists() && platformDir.listFiles() != null) {
 			int lastVersion = -1;
-			for (File androidVersionDir : platformDir.listFiles()) {
+			for (File androidVersionDir : Objects.requireNonNull(platformDir.listFiles())) {
 				if (androidVersionDir.isDirectory() && androidVersionDir.getName().startsWith("android-")) {
 					try {
 						int version = Integer.parseInt(androidVersionDir.getName().substring(8));
@@ -74,8 +75,8 @@ public class ApkSpy {
 		if (!Files.isDirectory(folder)) {
 			Files.createDirectories(folder);
 		}
-		Files.write(root.resolve(Paths.get("src", className.replace('.', File.separatorChar) + ".java")),
-				content.toString().getBytes(StandardCharsets.UTF_8));
+		Files.writeString(root.resolve(Paths.get("src", className.replace('.', File.separatorChar) + ".java")),
+				content.toString());
 
 		Path stubPath = Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy",
 				modifyingApk.getName().replace('.', '_') + "stub.jar");
@@ -132,14 +133,14 @@ public class ApkSpy {
 
 		copyProjectTemplate(new File("project-tmp"));
 
-		Files.write(Paths.get("project-tmp", "local.properties"),
-				("sdk.dir=" + sdkPath).getBytes(StandardCharsets.UTF_8));
+		Files.writeString(Paths.get("project-tmp", "local.properties"),
+				"sdk.dir=" + sdkPath);
 
 		Path gradleBuildPath = Paths.get("project-tmp", "app", "build.gradle");
-		String buildGradle = new String(Files.readAllBytes(gradleBuildPath), StandardCharsets.UTF_8);
+		String buildGradle = Files.readString(gradleBuildPath);
 		buildGradle = buildGradle.replace("$APPLICATION_ID", applicationId);
 
-		Files.write(gradleBuildPath, buildGradle.getBytes(StandardCharsets.UTF_8));
+		Files.writeString(gradleBuildPath, buildGradle);
 
 		Map<String, ClassBreakdown> classes = ChangeCache.getInstance().getChanges();
 		for (Map.Entry<String, ClassBreakdown> entry : classes.entrySet()) {
@@ -152,15 +153,15 @@ public class ApkSpy {
 			completePath.mkdirs();
 
 			File newFile = new File(completePath, "ApkSpy_" + toCompile.getName());
-			Files.write(newFile.toPath(), content.toString().getBytes(StandardCharsets.UTF_8));
+			Files.writeString(newFile.toPath(), content.toString());
 
 			String simpleName = className.substring(className.lastIndexOf('.') + 1);
-			String newFileContent = new String(Files.readAllBytes(newFile.toPath()), StandardCharsets.UTF_8);
+			String newFileContent = Files.readString(newFile.toPath());
 			newFileContent = newFileContent.replaceAll("(class|interface|enum|@interface) +" + simpleName + "(.*)\\{",
 					"$1 ApkSpy_" + simpleName + "$2{");
 			newFileContent = newFileContent.replaceAll(simpleName + " *\\((.*)\\) *\\{",
 					"ApkSpy_" + simpleName + "($1) {");
-			Files.write(newFile.toPath(), newFileContent.getBytes(StandardCharsets.UTF_8));
+			Files.writeString(newFile.toPath(), newFileContent);
 		}
 
 		Path stubPath = Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy",
@@ -186,18 +187,19 @@ public class ApkSpy {
 			return false;
 		}
 
+		Path target = Paths.get("generated.apk");
 		Files.copy(Paths.get("project-tmp", "app", "build", "outputs", "apk", "debug", "app-debug.apk"),
-				Paths.get("generated.apk"), StandardCopyOption.REPLACE_EXISTING);
+				target, StandardCopyOption.REPLACE_EXISTING);
 		Util.attemptDelete(new File("project-tmp"));
 
-		ApktoolWrapper.decode(Paths.get("generated.apk"), apktoolLocation, jdkLocation, "generated", false, out);
-		Files.delete(Paths.get("generated.apk"));
+		ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, "generated", false, out);
+		Files.delete(target);
 
 		ApktoolWrapper.decode(modifyingApk.toPath(), apktoolLocation, jdkLocation, "original", true, out);
 
 		List<Path> smaliFolders = Files.list(Paths.get("smali", "generated"))
 				.filter(path -> Files.isDirectory(path) && path.getFileName().toString().startsWith("smali"))
-				.collect(Collectors.toList());
+				.toList();
 		List<Path> destinationFolders = smaliFolders.stream()
 				.map(path -> Paths.get(path.toString().replace("generated", "original"))).collect(Collectors.toList());
 
@@ -221,12 +223,11 @@ public class ApkSpy {
 							}
 							LOG.info("Merging into file: {}", equivalent);
 
-							String modifiedContent = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+							String modifiedContent = Files.readString(path);
 							modifiedContent = modifiedContent.replace("ApkSpy_", "");
 
 							if (equivalent != null) {
-								String originalContent = new String(Files.readAllBytes(equivalent),
-										StandardCharsets.UTF_8);
+								String originalContent = Files.readString(equivalent);
 
 								SmaliBreakdown modifiedSmali = SmaliBreakdown.breakdown(modifiedContent);
 
@@ -250,7 +251,7 @@ public class ApkSpy {
 										builder.insert(equivalentMethod.getStart(), method.getContent());
 									}
 
-									Files.write(equivalent, builder.toString().getBytes(StandardCharsets.UTF_8));
+									Files.writeString(equivalent, builder.toString());
 								}
 							} else {
 								equivalent = Paths.get(smaliFolder.toString().replace("generated", "original"),

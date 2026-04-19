@@ -90,7 +90,7 @@ public class AddPackageDialog extends CommonDialog {
 	private void initUI() {
 		JLabel lbl = new JLabel("Add package");
 		newPackageField = new JTextField(40);
-		newPackageField.setFont(mainWindow.getSettings().getFont());
+		newPackageField.setFont(mainWindow.getSettings().getUiFont());
 		new TextStandardActions(newPackageField);
 
 		JPanel renamePane = new JPanel();
