@@ -6,7 +6,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
 	`java-library`
 
-	id("com.gradleup.shadow") version "9.3.1"
+	id("com.gradleup.shadow") version "9.4.1"
 	id("com.diffplug.spotless") version "8.2.1"
 
 	// auto update dependencies with 'useLatestVersions' task
