@@ -6,12 +6,12 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
 	`java-library`
 
-	id("com.gradleup.shadow") version "9.3.1"
-	id("com.diffplug.spotless") version "8.2.1"
+	id("com.gradleup.shadow") version "9.4.1"
+	id("com.diffplug.spotless") version "8.4.0"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("com.github.ben-manes.versions") version "0.53.0"
+	id("com.github.ben-manes.versions") version "0.54.0"
 }
 
 dependencies {
@@ -41,8 +41,8 @@ dependencies {
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
 	testImplementation("ch.qos.logback:logback-classic:1.5.32")
 	testImplementation("org.assertj:assertj-core:3.27.7")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.2")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.3")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 }
 
