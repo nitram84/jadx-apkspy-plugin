@@ -44,4 +44,41 @@ public class MethodExtractorUtilsTest extends SmaliSourceTest {
 					"}\n", MethodExtractorUtils.extractMethod(code, pos));
 		}
 	}
+
+	@Test
+	void findMethodPositionAnnotationsTest() {
+		String code = "package jadx.plugins.apkspy;\n"
+				+ "\n"
+				+ "/* JADX INFO: loaded from: classes.dex */\n"
+				+ "public class AnnotationTest {\n"
+				+ "    @Deprecated\n"
+				+ "    @Override\n"
+				+ "    public String toString() {\n"
+				+ "        return super.toString();\n"
+				+ "    }\n"
+				+ "}";
+		String method = MethodExtractorUtils.extractMethod(code, 150);
+		Assertions.assertNotNull(method);
+		Assertions.assertTrue(method.contains("    @Deprecated\n    @Override\n"));
+	}
+
+	@Test
+	void findMethodPositionAnnotationsUserCommentTest() {
+		String code = "package jadx.plugins.apkspy;\n"
+				+ "\n"
+				+ "// This is a user generated comment 1\n"
+				+ "/* JADX INFO: loaded from: classes.dex */\n"
+				+ "public class AnnotationTest {\n"
+				+ "    // This is a user generated comment 2\n"
+				+ "    @Deprecated\n"
+				+ "    @Override\n"
+				+ "    public String toString() {\n"
+				+ "        return super.toString();\n"
+				+ "    }\n"
+				+ "}";
+
+		String method = MethodExtractorUtils.extractMethod(code, 223);
+		Assertions.assertNotNull(method);
+		Assertions.assertTrue(method.contains("    // This is a user generated comment 2\n    @Deprecated\n    @Override\n"));
+	}
 }

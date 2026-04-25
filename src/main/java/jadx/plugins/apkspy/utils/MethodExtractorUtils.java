@@ -3,6 +3,7 @@ package jadx.plugins.apkspy.utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Stack;
 
 import jadx.api.JavaMethod;
 import jadx.core.dex.info.AccessInfo;
@@ -16,15 +17,16 @@ public final class MethodExtractorUtils {
 	}
 
 	public static String extractMethod(final String text, final int offset) {
-		final String[] lines = text.split(System.getProperty("line.separator"));
+		final String[] lines = text.split(System.lineSeparator());
 		final StringBuilder extraction = new StringBuilder();
 
 		int linePos = 0;
-		for (final String line : lines) {
+		for (int i = 0; i < lines.length; i++) {
+			String line = lines[i];
 			final int start = linePos;
 
 			linePos += line.length();
-			linePos += System.getProperty("line.separator").length();
+			linePos += System.lineSeparator().length();
 
 			String str = line.trim();
 			if (str.isEmpty()) {
@@ -43,6 +45,23 @@ public final class MethodExtractorUtils {
 			if (line.startsWith("    ") && !line.startsWith("     ") && str.endsWith("{")) {
 				final int closing = Util.findClosingBracket(text, start + line.lastIndexOf('{'));
 				if (offset > start && offset < closing) {
+					// add all annotations and user comments
+					Stack<String> annotationsAndUserComments = new Stack<>();
+					int j = i - 1;
+					for (; j > 0; j--) {
+						if (lines[j].trim().startsWith("@")) {
+							annotationsAndUserComments.push(lines[j]);
+						} else {
+							break;
+						}
+					}
+					if (j > 0 && lines[j].trim().startsWith("//")) {
+						annotationsAndUserComments.push(lines[j]);
+					}
+					while (!annotationsAndUserComments.empty()) {
+						extraction.append(annotationsAndUserComments.pop()).append('\n');
+					}
+
 					final String method = text.substring(start, closing);
 					extraction.append(method);
 					extraction.append("}\n}\n");

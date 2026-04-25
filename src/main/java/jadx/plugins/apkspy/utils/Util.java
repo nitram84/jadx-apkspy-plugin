@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -87,11 +89,81 @@ public class Util {
 		return -1;
 	}
 
+	// Formatter
+
 	public static String formatSources(final String content) {
 		CompilationUnit cu = StaticJavaParser.parse(content);
 		DefaultPrettyPrinter defaultPrettyPrinter = new DefaultPrettyPrinter();
 		DefaultPrinterConfiguration prettyPrinterConfig = new DefaultPrinterConfiguration();
 		defaultPrettyPrinter.setConfiguration(prettyPrinterConfig);
-		return defaultPrettyPrinter.print(cu);
+		return formatJavaSourceForJadx(defaultPrettyPrinter.print(cu));
+	}
+
+	/**
+	 * Javaparser formatter reoders line comments before method with annotations. In case of @Override
+	 * Jadx has comments after the annotation.
+	 *
+	 * @param input javaparser formatted source code
+	 * @return jadx formatted source code
+	 */
+	private static String formatJavaSourceForJadx(String input) {
+		String[] lines = input.split("\\r?\\n");
+		List<String> result = new ArrayList<>();
+
+		// buffer comment subsequent annotations
+		String pendingCommentLine = null;
+		List<String> pendingAnnotations = new ArrayList<>();
+
+		for (String line : lines) {
+			String trimmedLine = line.trim();
+
+			// case 1: Line is a comment
+			if (trimmedLine.startsWith("//")) {
+				// If a comment was already buffered , flush it first
+				flushCommentAndAnnotations(result, pendingCommentLine, pendingAnnotations);
+
+				pendingCommentLine = line;
+				pendingAnnotations.clear();
+			}
+			// case 2: line is an annotation
+			else if (trimmedLine.startsWith("@") && pendingCommentLine != null) {
+				if (trimmedLine.startsWith("@Override")) {
+					result.addAll(pendingAnnotations);
+					result.add(line + " " + pendingCommentLine.trim());
+
+					// reset buffer
+					pendingCommentLine = null;
+					pendingAnnotations.clear();
+				} else {
+					pendingAnnotations.add(line);
+				}
+			}
+			// case 3: Other code (methods, fields, empty lines, etc).
+			else {
+				flushCommentAndAnnotations(result, pendingCommentLine, pendingAnnotations);
+				pendingCommentLine = null;
+				pendingAnnotations.clear();
+				result.add(line);
+			}
+		}
+
+		// flush remaining content
+		flushCommentAndAnnotations(result, pendingCommentLine, pendingAnnotations);
+
+		return String.join(System.lineSeparator(), result);
+	}
+
+	/**
+	 * Flushes the buffered comment and annotations to the result list if they weren't processed.
+	 *
+	 * @param result
+	 * @param line
+	 * @param annotations
+	 */
+	private static void flushCommentAndAnnotations(List<String> result, String line, List<String> annotations) {
+		if (line != null) {
+			result.add(line);
+		}
+		result.addAll(annotations);
 	}
 }
