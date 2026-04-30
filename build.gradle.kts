@@ -23,7 +23,7 @@ dependencies {
 	compileOnly("io.github.skylot:jadx-gui:1.5.5")
 
 	// use same versions as jadx-gui
-	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.1")
+	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.2")
 	compileOnly("org.apache.commons:commons-lang3:3.20.0")
 	compileOnly("commons-io:commons-io:2.21.0")
 	compileOnly("ch.qos.logback:logback-classic:1.5.32")
