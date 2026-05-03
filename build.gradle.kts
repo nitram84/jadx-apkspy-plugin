@@ -15,7 +15,7 @@ plugins {
 }
 
 dependencies {
-	implementation("org.jetbrains:annotations:24.0.0")
+	implementation("org.jetbrains:annotations:26.1.0")
 
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
 	compileOnly("io.github.skylot:jadx-cli:1.5.5")
