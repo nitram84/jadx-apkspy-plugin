@@ -6,8 +6,8 @@ import java.util.Collections;
 
 import javax.swing.JFrame;
 
-import jadx.api.JadxDecompiler;
 import jadx.api.gui.tree.ITreeNode;
+import jadx.api.plugins.JadxPluginContext;
 import jadx.core.dex.nodes.ClassNode;
 import jadx.gui.treemodel.JClass;
 import jadx.gui.treemodel.JPackage;
@@ -22,8 +22,9 @@ public class AddClassDialog extends ApkSpyDialog {
 
 	private final ITreeNode node;
 
-	public AddClassDialog(final JFrame mainWindow, final ApkSpyOptions options, final ITreeNode node, final JadxDecompiler decompiler) {
-		super(mainWindow, options, decompiler, "Add class");
+	public AddClassDialog(final JFrame mainWindow, final ApkSpyOptions options, final ITreeNode node,
+			final JadxPluginContext pluginContext) {
+		super(mainWindow, options, pluginContext, "Add class");
 
 		this.node = node;
 	}

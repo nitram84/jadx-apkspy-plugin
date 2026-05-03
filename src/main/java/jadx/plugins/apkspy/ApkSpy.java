@@ -22,6 +22,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jadx.core.utils.exceptions.JadxRuntimeException;
 import jadx.plugins.apkspy.model.ChangeCache;
 import jadx.plugins.apkspy.model.ClassBreakdown;
 import jadx.plugins.apkspy.model.SmaliBreakdown;
@@ -61,14 +62,15 @@ public class ApkSpy {
 		return null;
 	}
 
-	public static boolean lint(String apk, String className, ClassBreakdown content, String sdkPath, String jdkLocation, OutputStream out)
+	public static boolean lint(String apk, Path baseTempDir, String className, ClassBreakdown content, String sdkPath, String jdkLocation,
+			OutputStream out)
 			throws IOException, InterruptedException {
 		LOG.info("Linting: {}", apk);
 		File modifyingApk = new File(apk);
-		Path root = Paths.get("project-tmp");
-		Map<String, ClassBreakdown> classes = Collections.singletonMap(className, content);
+		Path root = baseTempDir.resolve("lint_" + System.currentTimeMillis());
+		Files.createDirectories(root);
 
-		Util.attemptDelete(root.toFile());
+		Map<String, ClassBreakdown> classes = Collections.singletonMap(className, content);
 
 		String pkg = className.substring(0, className.lastIndexOf('.'));
 		Path folder = root.resolve(Paths.get("src", pkg.replace('.', File.separatorChar)));
@@ -78,21 +80,15 @@ public class ApkSpy {
 		Files.writeString(root.resolve(Paths.get("src", className.replace('.', File.separatorChar) + ".java")),
 				content.toString());
 
-		Path stubPath = Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy",
-				modifyingApk.getName().replace('.', '_') + "stub.jar");
-		if (!Files.exists(stubPath)) {
-			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
-		}
+		Path stubPath = root.resolve(Paths.get("libs", "stub.jar"));
 		Files.createDirectories(root.resolve("libs"));
-		Files.copy(stubPath, Paths.get("project-tmp", "libs", "stub.jar"));
+		JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
 
 		Files.createDirectories(root.resolve("bin"));
 
 		Path javac = null;
 		if (jdkLocation != null && !jdkLocation.isEmpty()) {
 			javac = Paths.get(jdkLocation, "bin", "javac");
-			// if (System.getenv("JAVA_HOME") != null) {
-			// javac = Paths.get(System.getenv("JAVA_HOME"), "bin", "javac");
 			if (!Files.isExecutable(javac)) {
 				javac = javac.getParent().resolve("javac.exe");
 				if (!Files.isExecutable(javac)) {
@@ -119,24 +115,28 @@ public class ApkSpy {
 		return code == 0;
 	}
 
-	public static boolean merge(String apk, String outputLocation, String sdkPath, String jdkLocation, String apktoolLocation,
+	public static boolean merge(String apk, String outputLocation, Path baseTempDir, String sdkPath, String jdkLocation,
+			String apktoolLocation,
 			String applicationId,
 			OutputStream out)
 			throws IOException, InterruptedException {
 		sdkPath = sdkPath.replace("\\", "\\\\");
 
 		LOG.info("Merging: {}", apk);
+		Path root = baseTempDir.resolve("merge_" + System.currentTimeMillis());
+		Files.createDirectories(root);
+
 		File modifyingApk = new File(apk);
 
-		Util.attemptDelete(new File("project-tmp"));
-		Util.attemptDelete(new File("smali"));
+		Path projectRoot = root.resolve("project-tmp");
+		Files.createDirectories(projectRoot);
 
-		copyProjectTemplate(new File("project-tmp"));
+		copyProjectTemplate(projectRoot.toFile());
 
-		Files.writeString(Paths.get("project-tmp", "local.properties"),
+		Files.writeString(projectRoot.resolve("local.properties"),
 				"sdk.dir=" + sdkPath);
 
-		Path gradleBuildPath = Paths.get("project-tmp", "app", "build.gradle");
+		Path gradleBuildPath = projectRoot.resolve(projectRoot.resolve(Paths.get("app", "build.gradle")));
 		String buildGradle = Files.readString(gradleBuildPath);
 		buildGradle = buildGradle.replace("$APPLICATION_ID", applicationId);
 
@@ -147,59 +147,50 @@ public class ApkSpy {
 			String className = entry.getKey();
 			ClassBreakdown content = entry.getValue();
 
-			File toCompile = new File(className.substring(className.lastIndexOf('.') + 1) + ".java");
-			File completePath = Paths.get("project-tmp", "app", "src", "main", "java",
-					className.substring(0, className.lastIndexOf('.')).replace(".", File.separator)).toFile();
-			completePath.mkdirs();
+			Path completePath = projectRoot.resolve(Paths.get("app", "src", "main", "java",
+					className.substring(0, className.lastIndexOf('.')).replace(".", File.separator)));
+			Files.createDirectories(completePath);
 
-			File newFile = new File(completePath, "ApkSpy_" + toCompile.getName());
-			Files.writeString(newFile.toPath(), content.toString());
+			Path newFile = completePath.resolve("ApkSpy_" + className.substring(className.lastIndexOf('.') + 1) + ".java");// toCompile.getName());
+			Files.writeString(newFile, content.toString());
 
 			String simpleName = className.substring(className.lastIndexOf('.') + 1);
-			String newFileContent = Files.readString(newFile.toPath());
+			String newFileContent = Files.readString(newFile);
 			newFileContent = newFileContent.replaceAll("(class|interface|enum|@interface) +" + simpleName + "(.*)\\{",
 					"$1 ApkSpy_" + simpleName + "$2{");
 			newFileContent = newFileContent.replaceAll(simpleName + " *\\((.*)\\) *\\{",
 					"ApkSpy_" + simpleName + "($1) {");
-			Files.writeString(newFile.toPath(), newFileContent);
+			Files.writeString(newFile, newFileContent);
 		}
 
-		Path stubPath = Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy",
-				modifyingApk.getName().replace('.', '_') + "stub.jar");
-		if (!Files.exists(stubPath)) {
-			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
-		}
-		Files.createDirectories(Paths.get("project-tmp", "app", "libs"));
-
-		if (!Files.exists(Paths.get("project-tmp", "app", "libs", "stub.jar"))) {
-			// we check if it doesn't already exist, in case gradle has a lock on it and it
-			// couldn't be deleted before
-			Files.copy(stubPath, Paths.get("project-tmp", "app", "libs", "stub.jar"));
-		}
+		Path stubPath = projectRoot.resolve(Paths.get("libs", "stub.jar"));
+		JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
 
 		if (!Util.isWindows()) {
-			Runtime.getRuntime().exec("chmod +x project-tmp/gradlew").waitFor();
+			Runtime.getRuntime().exec("chmod +x " + projectRoot.toFile().getAbsolutePath() + "/gradlew").waitFor();
 		}
 
-		if (Util.system(new File("project-tmp"), jdkLocation, out, new File("project-tmp").getAbsolutePath() + File.separator
+		if (Util.system(projectRoot.toFile().getAbsoluteFile(), jdkLocation, out, projectRoot.toFile().getAbsoluteFile() + File.separator
 				+ (Util.isWindows() ? "gradlew.bat" : "gradlew"), "build") != 0) {
-			Util.attemptDelete(new File("project-tmp"));
+			Util.attemptDelete(projectRoot.toFile());
 			return false;
 		}
 
-		Path target = Paths.get("generated.apk");
-		Files.copy(Paths.get("project-tmp", "app", "build", "outputs", "apk", "debug", "app-debug.apk"),
+		Path target = root.resolve("generated.apk");
+		Files.move(projectRoot.resolve(Paths.get("app", "build", "outputs", "apk", "debug", "app-debug.apk")),
 				target, StandardCopyOption.REPLACE_EXISTING);
-		Util.attemptDelete(new File("project-tmp"));
+		Util.attemptDelete(projectRoot.toFile());
 
-		ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, "generated", false, out);
+		Path smaliDir = root.resolve("smali");
+		Files.createDirectories(smaliDir);
+
+		ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, smaliDir.toFile(), "generated", false, out);
 		Files.delete(target);
 
-		ApktoolWrapper.decode(modifyingApk.toPath(), apktoolLocation, jdkLocation, "original", true, out);
+		ApktoolWrapper.decode(modifyingApk.toPath(), apktoolLocation, jdkLocation, smaliDir.toFile(), "original", true, out);
 
-		List<Path> smaliFolders = Files.list(Paths.get("smali", "generated"))
-				.filter(path -> Files.isDirectory(path) && path.getFileName().toString().startsWith("smali"))
-				.toList();
+		List<Path> smaliFolders = Files.list(smaliDir.resolve("generated"))
+				.filter(path -> Files.isDirectory(path) && path.getFileName().toString().startsWith("smali")).collect(Collectors.toList());
 		List<Path> destinationFolders = smaliFolders.stream()
 				.map(path -> Paths.get(path.toString().replace("generated", "original"))).collect(Collectors.toList());
 
@@ -263,8 +254,12 @@ public class ApkSpy {
 										StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 							}
 						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
+							LOG.error(
+									"ApkSpy Plugin: Abort merge. Please report an issue at https://github.com/nitram84/jadx-apkspy-plugin/issues",
+									e);
+							throw new JadxRuntimeException(
+									"ApkSpy Plugin: Abort merge. Please report an issue at https://github.com/nitram84/jadx-apkspy-plugin/issues",
+									e);
 						}
 					});
 		}
@@ -282,10 +277,8 @@ public class ApkSpy {
 			}
 		}
 
-		ApktoolWrapper.build(Paths.get("smali", "original"), apktoolLocation, jdkLocation, outputLocation, out);
-		Util.attemptDelete(new File("smali"));
-
-		Files.delete(stubPath);
+		ApktoolWrapper.build(smaliDir.resolve("original"), apktoolLocation, jdkLocation, smaliDir.toFile(), outputLocation, out);
+		Util.attemptDelete(root.toFile());
 
 		out.write("Finished creating APK!".getBytes(StandardCharsets.UTF_8));
 		return true;
@@ -302,9 +295,6 @@ public class ApkSpy {
 				"apkspy/default/gradlew",
 				"apkspy/default/gradlew.bat",
 				"apkspy/default/settings.gradle" };
-		if (!projectRoot.exists()) {
-			projectRoot.mkdirs();
-		}
 		for (final String filename : projectFiles) {
 			String targetFilename = filename.substring(15);
 			if (targetFilename.lastIndexOf('/') > -1) {

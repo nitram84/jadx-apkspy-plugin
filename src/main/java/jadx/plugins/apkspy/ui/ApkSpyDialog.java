@@ -23,6 +23,7 @@ import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.Problem;
 
 import jadx.api.JadxDecompiler;
+import jadx.api.plugins.JadxPluginContext;
 import jadx.gui.ui.MainWindow;
 import jadx.plugins.apkspy.ApkSpy;
 import jadx.plugins.apkspy.ApkSpyOptions;
@@ -42,12 +43,15 @@ public abstract class ApkSpyDialog extends JDialog {
 
 	protected final ApkSpyOptions options;
 
-	public ApkSpyDialog(final JFrame mainWindow, final ApkSpyOptions options, final JadxDecompiler decompiler, final String title) {
+	protected JadxPluginContext pluginContext;
+
+	public ApkSpyDialog(final JFrame mainWindow, final ApkSpyOptions options, final JadxPluginContext context, final String title) {
 		super(SwingUtilities.windowForComponent(mainWindow));
 
 		this.options = options;
 		this.mainWindow = mainWindow;
-		this.decompiler = decompiler;
+		this.decompiler = context.getDecompiler();
+		this.pluginContext = context;
 
 		final JPanel content = new JPanel();
 
@@ -104,7 +108,8 @@ public abstract class ApkSpyDialog extends JDialog {
 		try {
 			final ClassBreakdown breakdown = ApkSpyDialog.this.onPrepareCompile();
 			try {
-				if (ApkSpy.lint(this.decompiler.getArgs().getInputFiles().get(0).toString(), breakdown.getFullName(),
+				if (ApkSpy.lint(this.decompiler.getArgs().getInputFiles().get(0).toString(), this.pluginContext.files().getPluginTempDir(),
+						breakdown.getFullName(),
 						breakdown, options.getAndroidSdkPath(), options.getJdkLocation(), new OutputStream() {
 							@Override
 							public void write(final int b) {

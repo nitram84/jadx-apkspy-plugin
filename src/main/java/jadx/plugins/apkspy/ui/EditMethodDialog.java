@@ -4,8 +4,8 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import jadx.api.JadxDecompiler;
 import jadx.api.impl.SimpleCodeInfo;
+import jadx.api.plugins.JadxPluginContext;
 import jadx.core.dex.nodes.ClassNode;
 import jadx.core.dex.nodes.MethodNode;
 import jadx.gui.ui.MainWindow;
@@ -21,10 +21,10 @@ public class EditMethodDialog extends ApkSpyDialog {
 
 	private final MethodNode methodNode;
 
-	public EditMethodDialog(final JFrame mainWindow, final ApkSpyOptions options, final JadxDecompiler decompiler,
+	public EditMethodDialog(final JFrame mainWindow, final ApkSpyOptions options, JadxPluginContext context,
 			final MethodNode methodNode,
 			final String title) {
-		super(mainWindow, options, decompiler, title);
+		super(mainWindow, options, context, title);
 
 		this.methodNode = methodNode;
 	}

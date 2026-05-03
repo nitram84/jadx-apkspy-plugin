@@ -27,7 +27,7 @@ import static jadx.api.metadata.ICodeAnnotation.AnnType;
 public class ApkSpyUI {
 	public static void setup(JadxPluginContext context, JadxGuiContext guiContext, ApkSpyOptions options) {
 		guiContext.addMenuAction("Save APK", () -> guiContext
-				.uiRun(() -> new ApkSpySaver(guiContext.getMainFrame(), context.getDecompiler(), options).setVisible(true)));
+				.uiRun(() -> new ApkSpySaver(guiContext.getMainFrame(), context, options).setVisible(true)));
 
 		guiContext.addPopupMenuAction("Edit method", iCodeNodeRef -> iCodeNodeRef.getAnnType().equals(AnnType.METHOD), null,
 				iCodeNodeRef -> {
@@ -42,7 +42,7 @@ public class ApkSpyUI {
 							if (determinedContent != null) {
 								guiContext.uiRun(() -> {
 									EditMethodDialog dialog =
-											new EditMethodDialog(guiContext.getMainFrame(), options, context.getDecompiler(), methodNode,
+											new EditMethodDialog(guiContext.getMainFrame(), options, context, methodNode,
 													"Edit Method");
 									dialog.setCodeAreaContent(determinedContent);
 									dialog.setVisible(true);
@@ -69,7 +69,7 @@ public class ApkSpyUI {
 							if (determinedContent != null) {
 								guiContext.uiRun(() -> {
 									final EditMethodDialog dialog =
-											new EditMethodDialog(guiContext.getMainFrame(), options, context.getDecompiler(),
+											new EditMethodDialog(guiContext.getMainFrame(), options, context,
 													method.getJavaMethod().getMethodNode(), "Edit Method");
 									dialog.setCodeAreaContent(determinedContent);
 									dialog.setVisible(true);
@@ -100,7 +100,7 @@ public class ApkSpyUI {
 						final String clsTemplate =
 								"package " + packageNode.getPkg().getFullName() + ";\n\npublic class " + uniqueClassName + " {\n}\n";
 
-						final AddClassDialog dialog = new AddClassDialog(guiContext.getMainFrame(), options, node, context.getDecompiler());
+						final AddClassDialog dialog = new AddClassDialog(guiContext.getMainFrame(), options, node, context);
 						dialog.setCodeAreaContent(clsTemplate);
 						dialog.setVisible(true);
 					});

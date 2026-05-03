@@ -8,16 +8,17 @@ import java.nio.file.Path;
 import jadx.plugins.apkspy.utils.Util;
 
 public class ApktoolWrapper {
-	public static void decode(Path apk, String apktoolLocation, String jdkLocation, String dir, boolean resources, OutputStream out)
+	public static void decode(Path apk, String apktoolLocation, String jdkLocation, File baseDir, String dir, boolean resources,
+			OutputStream out)
 			throws InterruptedException, IOException {
-		Util.system(new File(System.getProperty("user.dir")), jdkLocation, out, "java", "-jar", apktoolLocation,
-				"decode", "-o", "smali" + File.separator + dir,
+		Util.system(baseDir, jdkLocation, out, "java", "-jar", apktoolLocation,
+				"decode", "-o", new File(baseDir, dir).getAbsolutePath(),
 				resources ? "" : "-r", apk.toAbsolutePath().toString());
 	}
 
-	public static void build(Path apk, String apktoolLocation, String jdkLocation, String outputLocation, OutputStream out)
+	public static void build(Path apk, String apktoolLocation, String jdkLocation, File baseDir, String outputLocation, OutputStream out)
 			throws InterruptedException, IOException {
-		Util.system(new File(System.getProperty("user.dir")), jdkLocation, out, "java", "-jar", apktoolLocation,
+		Util.system(baseDir, jdkLocation, out, "java", "-jar", apktoolLocation,
 				"build", "-o", outputLocation,
 				apk.toAbsolutePath().toString());
 	}

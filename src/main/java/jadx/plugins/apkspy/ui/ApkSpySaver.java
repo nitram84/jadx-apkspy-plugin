@@ -25,7 +25,7 @@ import javax.swing.text.DefaultCaret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jadx.api.JadxDecompiler;
+import jadx.api.plugins.JadxPluginContext;
 import jadx.plugins.apkspy.ApkSpy;
 import jadx.plugins.apkspy.ApkSpyOptions;
 import jadx.plugins.apkspy.model.ChangeCache;
@@ -35,7 +35,7 @@ public class ApkSpySaver extends JDialog {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ApkSpySaver.class);
 
-	public ApkSpySaver(JFrame mainWindow, JadxDecompiler decompiler, final ApkSpyOptions options) {
+	public ApkSpySaver(JFrame mainWindow, JadxPluginContext pluginContext, final ApkSpyOptions options) {
 		super(SwingUtilities.windowForComponent(mainWindow));
 
 		JPanel panel = new JPanel();
@@ -44,7 +44,7 @@ public class ApkSpySaver extends JDialog {
 		output.setEditable(false);
 
 		final JTextField saveLocation = new JTextField(30);
-		final String inputApkFilename = decompiler.getArgs().getInputFiles().get(0).toString();
+		final String inputApkFilename = pluginContext.getDecompiler().getArgs().getInputFiles().get(0).toString();
 		saveLocation.setText(inputApkFilename.replace(".apk", "_apkspy.apk"));
 
 		final JButton cancel = new JButton("Cancel");
@@ -85,7 +85,8 @@ public class ApkSpySaver extends JDialog {
 					public void run() {
 						try {
 							boolean success = ApkSpy.merge(inputApkFilename,
-									saveLocation.getText(), options.getAndroidSdkPath(), options.getJdkLocation(),
+									saveLocation.getText(), pluginContext.files().getPluginTempDir(), options.getAndroidSdkPath(),
+									options.getJdkLocation(),
 									options.getApktoolLocation(), "jadx", new OutputStream() {
 										@Override
 										public void write(int b) throws IOException {
