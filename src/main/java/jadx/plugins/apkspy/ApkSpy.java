@@ -35,7 +35,7 @@ public class ApkSpy {
 
 	private static String getClasspath(String... libs) {
 		return Arrays.stream(libs)
-				.map(lib -> lib.startsWith("/") ? lib : String.join(File.separator, "..", "libs", lib))
+				.map(lib -> new File(lib).isAbsolute() ? lib : String.join(File.separator, "..", "libs", lib))
 				.collect(Collectors.joining(File.pathSeparator));
 	}
 
@@ -82,7 +82,13 @@ public class ApkSpy {
 
 		Path stubPath = root.resolve(Paths.get("libs", "stub.jar"));
 		Files.createDirectories(root.resolve("libs"));
-		JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
+
+		try {
+			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, root);
+		} catch (IOException ex) {
+			out.write(("Failed to generate stub jar: " + ex.getMessage()).getBytes(StandardCharsets.UTF_8));
+			LOG.error("Failed to generate stub jar: ", ex);
+		}
 
 		Files.createDirectories(root.resolve("bin"));
 
@@ -99,12 +105,8 @@ public class ApkSpy {
 
 		out.write("Started compile...\n".getBytes(StandardCharsets.UTF_8));
 		String targetVersionDir = findLatestAndroidJars(sdkPath);
-		int code = Util.system(root.resolve("src").toFile(), jdkLocation, new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-				out.write(b);
-			}
-		}, javac == null ? "javac" : javac.toAbsolutePath().toString(), "-cp",
+		int code = Util.system(root.resolve("src").toFile(), jdkLocation, out, javac == null ? "javac" : javac.toAbsolutePath().toString(),
+				"-cp",
 				getClasspath(targetVersionDir + File.separator + "android.jar", "stub.jar",
 						targetVersionDir + File.separator + "optional" + File.separator + "org.apache.http.legacy.jar"),
 				"-d",
@@ -120,7 +122,6 @@ public class ApkSpy {
 			String applicationId,
 			OutputStream out)
 			throws IOException, InterruptedException {
-		sdkPath = sdkPath.replace("\\", "\\\\");
 
 		LOG.info("Merging: {}", apk);
 		Path root = baseTempDir.resolve("merge_" + System.currentTimeMillis());
@@ -134,7 +135,7 @@ public class ApkSpy {
 		copyProjectTemplate(projectRoot.toFile());
 
 		Files.writeString(projectRoot.resolve("local.properties"),
-				"sdk.dir=" + sdkPath);
+				"sdk.dir=" + sdkPath.replace("\\", "\\\\"));
 
 		Path gradleBuildPath = projectRoot.resolve(projectRoot.resolve(Paths.get("app", "build.gradle")));
 		String buildGradle = Files.readString(gradleBuildPath);
@@ -163,9 +164,12 @@ public class ApkSpy {
 			Files.writeString(newFile, newFileContent);
 		}
 
-		Path stubPath = projectRoot.resolve(Paths.get("libs", "stub.jar"));
-		JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes);
-
+		Path stubPath = projectRoot.resolve(Paths.get("app", "libs", "stub.jar"));
+		try {
+			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, root);
+		} catch (IOException e) {
+			return false;
+		}
 		if (!Util.isWindows()) {
 			Runtime.getRuntime().exec("chmod +x " + projectRoot.toFile().getAbsolutePath() + "/gradlew").waitFor();
 		}

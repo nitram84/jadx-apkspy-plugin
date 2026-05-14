@@ -1,12 +1,14 @@
 package jadx.plugins.apkspy;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -37,15 +39,22 @@ public class JarGenerator {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JarGenerator.class);
 
-	public static void generateStubJar(File apk, File output, OutputStream out, Map<String, ClassBreakdown> classes)
-			throws IOException, InterruptedException {
-		Util.attemptDelete(new File("decompiled-apk"));
+	public static void generateStubJar(File apk, File output, OutputStream out, Map<String, ClassBreakdown> classes, Path tempRoot)
+			throws IOException {
 
-		Dex2jarCmd.main("-nc", "-o",
-				output.getAbsolutePath(), apk.getAbsolutePath());
+		PrintStream oldErr = System.err;
 
-		Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"), "apkSpy", "dex2jar-classes");
-		Util.attemptDelete(tmpDir.toFile());
+		try (PrintStream captureErr = new PrintStream(out, true, StandardCharsets.UTF_8)) {
+			System.setErr(captureErr);
+			Dex2jarCmd.main("-nc", "-o", output.getAbsolutePath(), apk.getAbsolutePath());
+		} finally {
+			System.setErr(oldErr);
+		}
+		if (!output.exists()) {
+			throw new FileNotFoundException(output.getAbsolutePath());
+		}
+
+		Path tmpDir = tempRoot.resolve("dex2jar-classes");
 		Files.createDirectories(tmpDir);
 
 		JarFile jarFile = new JarFile(output);
@@ -54,9 +63,6 @@ public class JarGenerator {
 			JarEntry entry = entries.nextElement();
 
 			String entryName = entry.getName();
-			if (entryName.startsWith("android")) {
-				continue;
-			}
 			if (entryName.endsWith(".class")) {
 				visitClass(jarFile, entry, tmpDir, classes);
 			} else if (!entry.isDirectory()) {
@@ -78,12 +84,9 @@ public class JarGenerator {
 			throws IOException {
 		ClassNode classNode = new ClassNode();
 
-		InputStream classFileInputStream = jarFile.getInputStream(entry);
-		try {
+		try (InputStream classFileInputStream = jarFile.getInputStream(entry)) {
 			ClassReader classReader = new ClassReader(classFileInputStream);
 			classReader.accept(classNode, 0);
-		} finally {
-			classFileInputStream.close();
 		}
 
 		ClassWriter writer = new ClassWriter(0);

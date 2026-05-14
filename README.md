@@ -18,13 +18,12 @@ Currently, this plugin is in a proof of concept state.
 * It is necessary to set the "Code cache mode" to 'MEMORY' in preferences in order to recompile modified classes. Other cache modes are not yet supported
 * Obfuscation and renaming features can not be used together with this plugin.
 * Only methods are editable. Deleting methods is not supported yet.
-* Classes within the android.* packages cannot be edited.
 * Adding classes is only possible when "Code cache mode" is set to 'MEMORY' in preferences.
 * Changes to source code have to be saved externally - this plugin saves changes as modified APK.
 
 ### Building Jadx ApkSpy plugin from source
 
-JDK 11 or higher must be installed.
+JDK 17 or higher must be installed.
 
 Build the plugin:
 
@@ -58,7 +57,7 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 
 ### Install
 
-This plugin requires JADX in a version 1.5.2 or greater. Use the latest unstable build of JADX or latest git version if possible.
+This plugin requires JADX in a version 1.5.5 or greater. Use the latest unstable build of JADX or latest git version if possible.
 
 Install using location id: `github:nitram84:jadx-apkspy-plugin`
 

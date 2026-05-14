@@ -15,7 +15,7 @@ plugins {
 }
 
 dependencies {
-	implementation("org.jetbrains:annotations:26.1.0")
+	compileOnly("org.jetbrains:annotations:26.1.0")
 
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
 	compileOnly("io.github.skylot:jadx-cli:1.5.5")
@@ -30,7 +30,7 @@ dependencies {
 
 	// use same versions as in jadx-java-convert
 	compileOnly("org.ow2.asm:asm:9.9.1")
-	implementation("org.ow2.asm:asm-tree:9.9.1")
+	compileOnly("org.ow2.asm:asm-tree:9.9.1")
 
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.35")
 	implementation("com.github.javaparser:javaparser-core:3.28.0")
