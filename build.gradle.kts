@@ -33,7 +33,7 @@ dependencies {
 	compileOnly("org.ow2.asm:asm-tree:9.9.1")
 
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.35")
-	implementation("com.github.javaparser:javaparser-core:3.28.0")
+	implementation("com.github.javaparser:javaparser-core:3.28.1")
 
 	testImplementation("io.github.skylot:jadx-cli:1.5.5")
 	testImplementation("io.github.skylot:jadx-core:1.5.5")
