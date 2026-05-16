@@ -120,7 +120,7 @@ public class ApkSpy {
 	public static boolean merge(String apk, String outputLocation, Path baseTempDir, String sdkPath, String jdkLocation,
 			String apktoolLocation,
 			String applicationId,
-			OutputStream out)
+			OutputStream out, boolean keepOnError, boolean cleanOnSuccess)
 			throws IOException, InterruptedException {
 
 		LOG.info("Merging: {}", apk);
@@ -176,20 +176,35 @@ public class ApkSpy {
 
 		if (Util.system(projectRoot.toFile().getAbsoluteFile(), jdkLocation, out, projectRoot.toFile().getAbsoluteFile() + File.separator
 				+ (Util.isWindows() ? "gradlew.bat" : "gradlew"), "build") != 0) {
-			Util.attemptDelete(projectRoot.toFile());
+			if (!keepOnError) {
+				Util.attemptDelete(projectRoot.toFile());
+			}
 			return false;
 		}
 
 		Path target = root.resolve("generated.apk");
 		Files.move(projectRoot.resolve(Paths.get("app", "build", "outputs", "apk", "debug", "app-debug.apk")),
 				target, StandardCopyOption.REPLACE_EXISTING);
-		Util.attemptDelete(projectRoot.toFile());
+		if (cleanOnSuccess) {
+			Util.attemptDelete(projectRoot.toFile());
+		}
 
 		Path smaliDir = root.resolve("smali");
 		Files.createDirectories(smaliDir);
 
-		ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, smaliDir.toFile(), "generated", false, out);
-		Files.delete(target);
+		try {
+			ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, smaliDir.toFile(), "generated", false, out);
+		} catch (InterruptedException | IOException e) {
+			LOG.error("Decoding intermediate apk failed: ", e);
+			out.write(("Decoding intermediate apk failed: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
+			if (!keepOnError) {
+				Files.delete(target);
+			}
+			return false;
+		}
+		if (cleanOnSuccess) {
+			Files.delete(target);
+		}
 
 		ApktoolWrapper.decode(modifyingApk.toPath(), apktoolLocation, jdkLocation, smaliDir.toFile(), "original", true, out);
 
@@ -281,11 +296,31 @@ public class ApkSpy {
 			}
 		}
 
-		ApktoolWrapper.build(smaliDir.resolve("original"), apktoolLocation, jdkLocation, smaliDir.toFile(), outputLocation, out);
-		Util.attemptDelete(root.toFile());
+		try {
+			ApktoolWrapper.build(smaliDir.resolve("original"), apktoolLocation, jdkLocation, smaliDir.toFile(), outputLocation, out);
+		} catch (InterruptedException | IOException e) {
+			if (!keepOnError) {
+				Util.attemptDelete(root.toFile());
+			}
+			LOG.error("Could not generate apk: ", e);
+			out.write(("Could not generate apk: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
+			return false;
+		}
 
-		out.write("Finished creating APK!".getBytes(StandardCharsets.UTF_8));
-		return true;
+		if (new File(outputLocation).exists()) {
+			out.write("Finished creating APK!".getBytes(StandardCharsets.UTF_8));
+			if (cleanOnSuccess) {
+				Util.attemptDelete(root.toFile());
+			}
+			return true;
+		} else {
+			out.write("Error: Could not generate apk.".getBytes(StandardCharsets.UTF_8));
+			LOG.error("Could not generate apk.");
+			if (!keepOnError) {
+				Util.attemptDelete(root.toFile());
+			}
+			return false;
+		}
 	}
 
 	private static void copyProjectTemplate(final File projectRoot) {
