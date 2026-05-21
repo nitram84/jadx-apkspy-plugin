@@ -2,24 +2,53 @@ package jadx.plugins.apkspy;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Properties;
 
-import jadx.plugins.apkspy.utils.Util;
+import brut.androlib.ApkBuilder;
+import brut.androlib.ApkDecoder;
+import brut.androlib.Config;
+import brut.androlib.exceptions.AndrolibException;
 
 public class ApktoolWrapper {
-	public static void decode(Path apk, String apktoolLocation, String jdkLocation, File baseDir, String dir, boolean resources,
-			OutputStream out)
-			throws InterruptedException, IOException {
-		Util.system(baseDir, jdkLocation, out, "java", "-jar", apktoolLocation,
-				"decode", "-o", new File(baseDir, dir).getAbsolutePath(),
-				resources ? "" : "-r", apk.toAbsolutePath().toString());
+
+	private static String apktoolVersion = "";
+
+	private static String getApktoolVersion() {
+
+		if (apktoolVersion.isEmpty()) {
+			Properties properties = new Properties();
+
+			try (InputStream input = ApktoolWrapper.class.getClassLoader().getResourceAsStream("versions.properties")) {
+				properties.load(input);
+				apktoolVersion = properties.getProperty("apktool.version");
+			} catch (IOException ignored) {
+			}
+		}
+		return apktoolVersion;
 	}
 
-	public static void build(Path apk, String apktoolLocation, String jdkLocation, File baseDir, String outputLocation, OutputStream out)
-			throws InterruptedException, IOException {
-		Util.system(baseDir, jdkLocation, out, "java", "-jar", apktoolLocation,
-				"build", "-o", outputLocation,
-				apk.toAbsolutePath().toString());
+	private static Config getConfig() {
+		return new Config(getApktoolVersion());
+	}
+
+	public static void decode(Path apk, File outDir, boolean resources)
+			throws AndrolibException {
+
+		Config config = getConfig();
+		if (resources) {
+			config.setDecodeResources(Config.DecodeResources.NONE);
+		}
+
+		new ApkDecoder(apk.toFile(), config).decode(outDir);
+	}
+
+	public static void build(Path apk, String outputLocation)
+			throws AndrolibException {
+
+		Config config = getConfig();
+		File outFile = new File(outputLocation);
+		new ApkBuilder(apk.toFile(), config).build(outFile);
 	}
 }

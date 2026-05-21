@@ -22,6 +22,8 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import brut.androlib.exceptions.AndrolibException;
+
 import jadx.core.utils.exceptions.JadxRuntimeException;
 import jadx.plugins.apkspy.model.ChangeCache;
 import jadx.plugins.apkspy.model.ClassBreakdown;
@@ -118,7 +120,6 @@ public class ApkSpy {
 	}
 
 	public static boolean merge(String apk, String outputLocation, Path baseTempDir, String sdkPath, String jdkLocation,
-			String apktoolLocation,
 			String applicationId,
 			OutputStream out, boolean keepOnError, boolean cleanOnSuccess)
 			throws IOException, InterruptedException {
@@ -192,9 +193,10 @@ public class ApkSpy {
 		Path smaliDir = root.resolve("smali");
 		Files.createDirectories(smaliDir);
 
+		out.write("Apktool: Decode generated apk\n".getBytes(StandardCharsets.UTF_8));
 		try {
-			ApktoolWrapper.decode(target, apktoolLocation, jdkLocation, smaliDir.toFile(), "generated", false, out);
-		} catch (InterruptedException | IOException e) {
+			ApktoolWrapper.decode(target, new File(smaliDir.toFile(), "generated"), false);
+		} catch (AndrolibException e) {
 			LOG.error("Decoding intermediate apk failed: ", e);
 			out.write(("Decoding intermediate apk failed: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
 			if (!keepOnError) {
@@ -206,7 +208,12 @@ public class ApkSpy {
 			Files.delete(target);
 		}
 
-		ApktoolWrapper.decode(modifyingApk.toPath(), apktoolLocation, jdkLocation, smaliDir.toFile(), "original", true, out);
+		out.write("Apktool: Decode original apk\n".getBytes(StandardCharsets.UTF_8));
+		try {
+			ApktoolWrapper.decode(modifyingApk.toPath(), new File(smaliDir.toFile(), "original"), true);
+		} catch (AndrolibException e) {
+			LOG.error("Decoding original apk failed: ", e);
+		}
 
 		List<Path> smaliFolders = Files.list(smaliDir.resolve("generated"))
 				.filter(path -> Files.isDirectory(path) && path.getFileName().toString().startsWith("smali")).collect(Collectors.toList());
@@ -296,9 +303,10 @@ public class ApkSpy {
 			}
 		}
 
+		out.write("Apktool: Build modified apk\n".getBytes(StandardCharsets.UTF_8));
 		try {
-			ApktoolWrapper.build(smaliDir.resolve("original"), apktoolLocation, jdkLocation, smaliDir.toFile(), outputLocation, out);
-		} catch (InterruptedException | IOException e) {
+			ApktoolWrapper.build(smaliDir.resolve("original"), outputLocation);
+		} catch (AndrolibException e) {
 			if (!keepOnError) {
 				Util.attemptDelete(root.toFile());
 			}

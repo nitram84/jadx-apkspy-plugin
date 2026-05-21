@@ -45,8 +45,7 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 
 * To compile modified classes a JDK 17 or greater is required.
 * Android SDK
-* Apktool (https://github.com/iBotPeaches/Apktool)
-* Locations for JDK, Apktool and Android SDK have to be configured in plugin options.
+* Locations for JDK and Android SDK have to be configured in plugin options.
 
 #### How to use
 

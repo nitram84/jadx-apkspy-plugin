@@ -129,7 +129,7 @@ public class ApkSpySaver extends JDialog {
 						return;
 					}
 				} catch (IOException ex) {
-					ex.printStackTrace();
+					LOG.error("Android SDK check failed: ", ex);
 				}
 
 				if (!ChangeCache.getInstance().hasChanges()) {
@@ -150,9 +150,9 @@ public class ApkSpySaver extends JDialog {
 							boolean success = ApkSpy.merge(inputApkFilename,
 									saveLocation.getText(), pluginContext.files().getPluginTempDir(), options.getAndroidSdkPath(),
 									options.getJdkLocation(),
-									options.getApktoolLocation(), "jadx", new OutputStream() {
+									"jadx", new OutputStream() {
 										@Override
-										public void write(int b) throws IOException {
+										public void write(int b) {
 											System.out.print((char) b);
 											output.append(Character.toString((char) b));
 										}

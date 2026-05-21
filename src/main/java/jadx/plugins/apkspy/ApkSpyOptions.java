@@ -21,11 +21,6 @@ public class ApkSpyOptions extends BasePluginOptionsBuilder {
 				.description("JDK location (Java 17 or greater)")
 				.defaultValue("")
 				.setter(v -> jdkLocation = v);
-
-		strOption(ApkSpyPlugin.PLUGIN_ID + ".apktoolLocation.path")
-				.description("Apktool location")
-				.defaultValue("")
-				.setter(v -> apktoolLocation = v);
 	}
 
 	public String getAndroidSdkPath() {
@@ -34,9 +29,5 @@ public class ApkSpyOptions extends BasePluginOptionsBuilder {
 
 	public String getJdkLocation() {
 		return jdkLocation;
-	}
-
-	public String getApktoolLocation() {
-		return apktoolLocation;
 	}
 }

@@ -2,6 +2,7 @@ import com.diffplug.gradle.spotless.FormatExtension
 import com.diffplug.gradle.spotless.SpotlessExtension
 import com.diffplug.spotless.LineEnding
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import java.util.Properties
 
 plugins {
 	`java-library`
@@ -31,6 +32,17 @@ dependencies {
 	// use same versions as in jadx-java-convert
 	compileOnly("org.ow2.asm:asm:9.9.1")
 	compileOnly("org.ow2.asm:asm-tree:9.9.1")
+
+	implementation("org.apktool:apktool-lib:3.0.2") {
+		// exclude iBotPeaches fork, use provided version of jadx
+		// Known Issues are https://github.com/iBotPeaches/Apktool/issues/3767 and https://github.com/iBotPeaches/Apktool/issues/3943
+		// See https://github.com/iBotPeaches/Apktool/pull/4027
+		exclude(group = "com.github.iBotPeaches.smali", module = "smali-baksmali")
+		exclude(group = "com.github.iBotPeaches.smali", module = "smali")
+		exclude(group = "com.google.guava", module = "guava")
+		exclude(group = "commons-io", module = "commons-io")
+		exclude(group = "org.apache.commons", module = "commons-text")
+	}
 
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.35")
 	implementation("com.github.javaparser:javaparser-core:3.28.1")
@@ -105,5 +117,36 @@ tasks {
 
 		from(shadowJar)
 		into(layout.buildDirectory.dir("dist"))
+	}
+}
+
+val generateVersionProperties by tasks.registering {
+	val outputDir = layout.buildDirectory.dir("generated/resources")
+	val outputFile = outputDir.get().file("versions.properties")
+	outputs.dir(outputDir)
+
+	doLast {
+		val apktoolDep =
+			configurations.implementation.get().dependencies.find {
+				it.group == "org.apktool" && it.name == "apktool-lib"
+			}
+
+		if (apktoolDep != null && apktoolDep.version != null) {
+			val props = Properties()
+			props.setProperty("apktool.version", apktoolDep.version)
+			outputFile.asFile.writer().use { writer ->
+				props.store(writer, "Do not edit - This file is generated.")
+			}
+		}
+	}
+}
+
+tasks.processResources {
+	dependsOn(generateVersionProperties)
+}
+
+sourceSets {
+	main {
+		resources.srcDir(generateVersionProperties)
 	}
 }
