@@ -29,8 +29,8 @@ dependencies {
 	compileOnly("ch.qos.logback:logback-classic:1.5.32")
 
 	// use same versions as in jadx-java-convert
-	compileOnly("org.ow2.asm:asm:9.9.1")
-	compileOnly("org.ow2.asm:asm-tree:9.9.1")
+	compileOnly("org.ow2.asm:asm:9.10")
+	compileOnly("org.ow2.asm:asm-tree:9.10")
 
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.35")
 	implementation("com.github.javaparser:javaparser-core:3.28.1")
