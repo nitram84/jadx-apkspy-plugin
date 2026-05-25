@@ -8,8 +8,6 @@ public class ApkSpyOptions extends BasePluginOptionsBuilder {
 
 	private String jdkLocation;
 
-	private String apktoolLocation;
-
 	@Override
 	public void registerOptions() {
 		strOption(ApkSpyPlugin.PLUGIN_ID + ".androidSdk.path")

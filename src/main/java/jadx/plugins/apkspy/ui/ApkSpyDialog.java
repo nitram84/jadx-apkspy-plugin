@@ -108,7 +108,7 @@ public abstract class ApkSpyDialog extends JDialog {
 		try {
 			final ClassBreakdown breakdown = ApkSpyDialog.this.onPrepareCompile();
 			try {
-				if (ApkSpy.lint(this.decompiler.getArgs().getInputFiles().get(0).toString(), this.pluginContext.files().getPluginTempDir(),
+				if (ApkSpy.lint(this.decompiler, this.pluginContext.files().getPluginTempDir(),
 						breakdown.getFullName(),
 						breakdown, options.getAndroidSdkPath(), options.getJdkLocation(), new OutputStream() {
 							@Override

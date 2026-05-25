@@ -147,7 +147,7 @@ public class ApkSpySaver extends JDialog {
 					@Override
 					public void run() {
 						try {
-							boolean success = ApkSpy.merge(inputApkFilename,
+							boolean success = ApkSpy.merge(pluginContext.getDecompiler(),
 									saveLocation.getText(), pluginContext.files().getPluginTempDir(), options.getAndroidSdkPath(),
 									options.getJdkLocation(),
 									"jadx", new OutputStream() {
