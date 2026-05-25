@@ -84,7 +84,7 @@ public class SmaliBreakdown {
 				} else {
 					javaReturnType = beforeArguments.substring(x, beforeArguments.lastIndexOf(' '));
 				}
-				if (javaName.equals(fromClass.getSimpleName())) {
+				if (javaName.equals(fromClass.getSimpleName()) && javaReturnType.trim().isEmpty()) {
 					javaName = "<init>";
 					javaReturnType = null;
 				} else {

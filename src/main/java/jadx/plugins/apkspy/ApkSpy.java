@@ -314,8 +314,10 @@ public class ApkSpy {
 										SmaliBreakdown originalSmali = SmaliBreakdown.breakdown(builder.toString());
 										SmaliMethod equivalentMethod = originalSmali.getEquivalentMethod(method);
 
-										builder.delete(equivalentMethod.getStart(), equivalentMethod.getEnd());
-										builder.insert(equivalentMethod.getStart(), method.getContent());
+										if (equivalentMethod != null) {
+											builder.delete(equivalentMethod.getStart(), equivalentMethod.getEnd());
+											builder.insert(equivalentMethod.getStart(), method.getContent());
+										}
 									}
 
 									Files.writeString(equivalent, builder.toString());
