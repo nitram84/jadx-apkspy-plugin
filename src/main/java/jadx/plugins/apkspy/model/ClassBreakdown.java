@@ -221,29 +221,35 @@ public class ClassBreakdown implements Cloneable {
 	}
 
 	private JavaMethod toStub(JavaMethod method) {
+		StringBuilder stub = new StringBuilder();
 		String header = method.getHeader();
-		String containing = header.substring(0, header.indexOf('('));
+		String containing = header.substring(0, header.indexOf('(') + 1);
 
-		String stub = header + "\n";
+		for (String annotation : method.getAnnotations()) {
+			stub.append("    ").append(annotation).append('\n');
+		}
+
+		stub.append(header).append('\n');
 		if (containing.contains("byte ") || containing.contains("short ") || containing.contains("int ")
 				|| containing.contains("long ")) {
-			stub += "    return 0;\n";
+			stub.append("    return 0;\n");
 		} else if (containing.contains("float ")) {
-			stub += "    return 0.0f;\n";
+			stub.append("    return 0.0f;\n");
 		} else if (containing.contains("double ")) {
-			stub += "    return 0.0;\n";
+			stub.append("    return 0.0;\n");
 		} else if (containing.contains("char ")) {
-			stub += "    return ' ';\n";
+			stub.append("    return ' ';\n");
 		} else if (containing.contains("boolean ")) {
-			stub += "    return false;\n";
-		} else if (containing.contains("void ") || containing.contains(this.simpleName)) {
-			stub += "    return;\n";
+			stub.append("    return false;\n");
+		} else if (containing.contains("void ")
+				|| (containing.endsWith(" " + this.simpleName + "(") && !containing.contains(" " + this.simpleName + " "))) {
+			stub.append("    return;\n");
 		} else {
-			stub += "    return null;\n";
+			stub.append("    return null;\n");
 		}
-		stub += "}";
+		stub.append('}');
 
-		return new JavaMethod(stub);
+		return new JavaMethod(stub.toString());
 	}
 
 	public ClassBreakdown mergeMethodStubs(List<JavaMethod> methods) {
@@ -273,7 +279,7 @@ public class ClassBreakdown implements Cloneable {
 
 	public ClassBreakdown mergeInnerClassStubs(ClassBreakdown original) {
 		ClassBreakdown breakdown = new ClassBreakdown(this);
-		breakdown.innerClasses = original.innerClasses.stream().map(cls -> cls.asStub()).collect(Collectors.toList());
+		breakdown.innerClasses = original.innerClasses.stream().map(ClassBreakdown::asStub).collect(Collectors.toList());
 		return breakdown;
 	}
 
@@ -297,29 +303,32 @@ public class ClassBreakdown implements Cloneable {
 
 		str.append((this.classDeclaration + " {\n").replaceAll("(.*?)(class|interface|enum|@interface) (.+?) (.+)",
 				"$1$2 " + this.simpleName + " $4"));
-		if (this.memberVariables.length() > 0) {
+		if (!this.memberVariables.isEmpty()) {
 			for (String member : this.memberVariables.split("\n")) {
-				str.append("    " + member + "\n");
+				str.append("    ").append(member).append('\n');
 			}
 			str.append("\n");
 		}
-		if (this.innerClasses.size() > 0) {
+		if (!this.innerClasses.isEmpty()) {
 			for (ClassBreakdown innerClass : this.innerClasses) {
 				String toStr = innerClass.toString();
 				for (String split : toStr.split("\n")) {
-					str.append("    " + split + "\n");
+					str.append("    ").append(split).append('\n');
 				}
 				str.append("\n");
 			}
 		}
-		if (this.methods.size() > 0) {
+		if (!this.methods.isEmpty()) {
 			for (JavaMethod method : this.methods) {
+				for (String annotation : method.getAnnotations()) {
+					str.append("    ").append(annotation).append('\n');
+				}
 				for (String split : method.toString().split("\n")) {
-					str.append("    " + split + "\n");
+					str.append("    ").append(split).append('\n');
 				}
 				str.append("\n");
 			}
 		}
-		return str.toString().substring(0, str.length() - 1) + "}";
+		return str.substring(0, str.length() - 1) + "}";
 	}
 }

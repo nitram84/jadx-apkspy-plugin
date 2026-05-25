@@ -146,7 +146,10 @@ public class ClassBreakdownTest {
 		final String name = "TestClass";
 		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
 		Assertions.assertEquals(1, original.getMethods().size());
-		Assertions.assertEquals("@Override // java.lang.Object\npublic String toString() {", original.getMethods().get(0).getHeader());
+		Assertions.assertEquals("public String toString() {", original.getMethods().get(0).getHeader());
+		Assertions.assertEquals(1, original.getMethods().get(0).getAnnotations().size());
+		Assertions.assertEquals("@Override // java.lang.Object", original.getMethods().get(0).getAnnotations().get(0));
+
 	}
 
 	@Test
@@ -183,7 +186,6 @@ public class ClassBreakdownTest {
 		final String fullName = "jadx.plugin.apkspy.test.TestActivity";
 		final String name = "TestActivity";
 		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
-		System.out.println(original.getMethods().get(0).getHeader());
 
 		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, name,
 				Util.formatSources(modified));
@@ -191,11 +193,14 @@ public class ClassBreakdownTest {
 				.mergeMethodStubs(original.getMethods()).mergeInnerClassStubs(original);
 
 		Assertions.assertEquals(1, merged.getMethods().size());
+		JavaMethod javaMethod = original.getMethods().get(0);
+		Assertions.assertEquals("protected void onCreate(Bundle bundle) {",
+				javaMethod.getHeader());
+		Assertions.assertEquals(2, javaMethod.getAnnotations().size());
+		Assertions.assertEquals("@Deprecated", javaMethod.getAnnotations().get(0));
 		Assertions.assertEquals(
-				"@Deprecated\n@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity\n"
-						+
-						"protected void onCreate(Bundle bundle) {",
-				original.getMethods().get(0).getHeader());
+				"@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity",
+				javaMethod.getAnnotations().get(1));
 	}
 
 	@Test
@@ -243,10 +248,54 @@ public class ClassBreakdownTest {
 				.mergeMethodStubs(original.getMethods()).mergeInnerClassStubs(original);
 
 		Assertions.assertEquals(1, merged.getMethods().size());
+		JavaMethod javaMethod = original.getMethods().get(0);
 		Assertions.assertEquals(
-				"// This is a custom line comment 2\n@Deprecated\n@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity\n"
+				"// This is a custom line comment 2\n"
 						+
 						"protected void onCreate(Bundle bundle) {",
-				original.getMethods().get(0).getHeader());
+				javaMethod.getHeader());
+		Assertions.assertEquals(2, javaMethod.getAnnotations().size());
+		Assertions.assertEquals("@Deprecated", javaMethod.getAnnotations().get(0));
+		Assertions.assertEquals(
+				"@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity",
+				javaMethod.getAnnotations().get(1));
+	}
+
+	@Test
+	void asStubTest1() {
+		final String originalCode = "package jadx.plugin.apkspy.test;\n" +
+				"\n" +
+				"/* loaded from: classes.dex */\n" +
+				"public class ed {\n" +
+				"    public ed() {\n" +
+				"    }\n" +
+				"\n" +
+				"    @Deprecated(forRemoval = true)\n" +
+				"    public static ed ed() {\n" +
+				"        return new ed();\n" +
+				"    }\n" +
+				"\n" +
+				"    public static ed ed(int i) {\n" +
+				"        return new ed();\n" +
+				"    }\n" +
+				"}";
+		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.ed", "ed", originalCode);
+		Assertions.assertEquals("package jadx.plugin.apkspy.test;\n" +
+				"\n" +
+				"/* loaded from: classes.dex */\n" +
+				"public class ed {\n" +
+				"    public ed() {\n" +
+				"        return;\n" +
+				"    }\n" +
+				"\n" +
+				"    @Deprecated(forRemoval = true)\n" +
+				"    public static ed ed() {\n" +
+				"        return null;\n" +
+				"    }\n" +
+				"\n" +
+				"    public static ed ed(int i) {\n" +
+				"        return null;\n" +
+				"    }\n" +
+				"}", original.asStub().toString());
 	}
 }

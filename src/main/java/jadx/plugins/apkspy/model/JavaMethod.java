@@ -1,8 +1,13 @@
 package jadx.plugins.apkspy.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class JavaMethod {
 	private String comments;
 	private String method;
+
+	private final List<String> annotations = new ArrayList<>();
 
 	public JavaMethod(final String content) {
 		final StringBuilder comments = new StringBuilder();
@@ -14,7 +19,11 @@ public class JavaMethod {
 				comments.append(line).append('\n');
 				isCommentBlock = !line.contains("*/");
 			} else {
-				method.append(line).append('\n');
+				if (line.trim().startsWith("@")) {
+					annotations.add(line.trim());
+				} else {
+					method.append(line).append('\n');
+				}
 			}
 		}
 
@@ -47,6 +56,16 @@ public class JavaMethod {
 		if (this.comments.isEmpty()) {
 			return this.method;
 		}
-		return this.comments + "\n" + this.method;
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.comments).append('\n');
+		for (String annotation : annotations) {
+			sb.append(annotation).append('\n');
+		}
+		sb.append(this.method);
+		return sb.toString();
+	}
+
+	public List<String> getAnnotations() {
+		return annotations;
 	}
 }

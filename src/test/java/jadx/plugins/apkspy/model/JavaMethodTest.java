@@ -18,10 +18,11 @@ public class JavaMethodTest {
 				+ "    return \"\";\n"
 				+ "}\n";
 		final JavaMethod method = new JavaMethod(content);
-		Assertions.assertEquals("@Override // java.lang.Object\n"
-				+ "public String toString() {\n"
+		Assertions.assertEquals("public String toString() {\n"
 				+ "    return \"\";\n"
 				+ "}", method.getMethod());
+		Assertions.assertEquals(1, method.getAnnotations().size());
+		Assertions.assertEquals("@Override // java.lang.Object", method.getAnnotations().get(0));
 		Assertions.assertEquals("/* JADX WARN: */\n"
 				+ "/* JADX WARN: this is a\n"
 				+ " multiline warning */\n"
