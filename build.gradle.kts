@@ -30,8 +30,8 @@ dependencies {
 	compileOnly("ch.qos.logback:logback-classic:1.5.32")
 
 	// use same versions as in jadx-java-convert
-	compileOnly("org.ow2.asm:asm:9.9.1")
-	compileOnly("org.ow2.asm:asm-tree:9.9.1")
+	compileOnly("org.ow2.asm:asm:9.10.1")
+	compileOnly("org.ow2.asm:asm-tree:9.10.1")
 
 	implementation("org.apktool:apktool-lib:3.0.2") {
 		// exclude iBotPeaches fork, use provided version of jadx
