@@ -7,6 +7,7 @@ import java.util.Properties
 plugins {
 	`java-library`
 
+	id("maven-publish")
 	id("com.gradleup.shadow") version "9.4.1"
 	id("com.diffplug.spotless") version "8.5.1"
 
@@ -99,6 +100,7 @@ java {
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
+group = "com.github.nitram84"
 version = System.getenv("VERSION") ?: "dev"
 
 tasks {
