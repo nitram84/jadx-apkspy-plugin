@@ -1,5 +1,6 @@
 package jadx.plugins.apkspy.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -297,5 +298,32 @@ public class ClassBreakdownTest {
 				"        return null;\n" +
 				"    }\n" +
 				"}", original.asStub().toString());
+	}
+
+	@Test
+	void annotationsInAnonymousClassesTest() {
+		final String originalCode = "package jadx.plugin.apkspy.test;\n" +
+				"\n" +
+				"import android.os.Bundle;\n" +
+				"import android.support.v7.app.AppCompatActivity;\n" +
+				"import android.view.View;\n" +
+				"import android.widget.Button;\n" +
+				"\n" +
+				"/* JADX INFO: loaded from: classes.dex */\n" +
+				"public class TestActivity extends AppCompatActivity {\n" +
+				"    @Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity\n"
+				+
+				"    protected void onCreate(Bundle bundle) {\n" +
+				"        super.onCreate(bundle);\n" +
+				"        Button button = findViewById(R.id.buttonOk));\n" +
+				"        button.setOnClickListener(new View.OnClickListener() { // from class: jadx.plugin.apkspy.test.TestActivity.1\n" +
+				"            @Override // android.view.View.OnClickListener\n" +
+				"            public void onClick(View view) {\n" +
+				"            }\n" +
+				"        });\n" +
+				"    }\n" +
+				"}";
+		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.TestActivity", "TestActivity", originalCode);
+		Assertions.assertEquals(1, StringUtils.countMatches(original.asStub().toString(), "@Override"));
 	}
 }

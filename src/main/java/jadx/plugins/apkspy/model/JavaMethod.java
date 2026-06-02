@@ -19,7 +19,7 @@ public class JavaMethod {
 				comments.append(line).append('\n');
 				isCommentBlock = !line.contains("*/");
 			} else {
-				if (line.trim().startsWith("@")) {
+				if (line.startsWith("@")) {
 					annotations.add(line.trim());
 				} else {
 					method.append(line).append('\n');

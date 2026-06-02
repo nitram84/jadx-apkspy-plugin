@@ -15,11 +15,12 @@ Currently, this plugin is in a proof of concept state.
 
 #### Workarounds needed to recompile sources and to rebuild an APK
 
-* It is necessary to set the "Code cache mode" to 'MEMORY' in preferences in order to recompile modified classes. Other cache modes are not yet supported
+* It is necessary to set the "Code cache mode" to 'MEMORY' in preferences in order to recompile modified classes. Other cache modes are not yet supported.
 * Obfuscation and renaming features can not be used together with this plugin.
 * Only methods are editable. Deleting methods is not supported yet.
 * Adding classes is only possible when "Code cache mode" is set to 'MEMORY' in preferences.
 * Changes to source code have to be saved externally - this plugin saves changes as modified APK.
+* Editing methods in anonymous classes is not yet supported.
 
 ### Building Jadx ApkSpy plugin from source
 
@@ -53,6 +54,7 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 * Right-click on the name of method to be edited to open the context menu and select "Edit method"
 * After modifications for the method are done, compile and save changes
 * Save APK in plugins menu
+* Modifications can be reset with "Reload files".
 
 ### Install
 

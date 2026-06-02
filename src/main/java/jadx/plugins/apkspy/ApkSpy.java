@@ -129,13 +129,23 @@ public class ApkSpy {
 
 		out.write("Started compile...\n".getBytes(StandardCharsets.UTF_8));
 		String targetVersionDir = findLatestAndroidJars(sdkPath);
-		int code = Util.system(root.resolve("src").toFile(), jdkLocation, out, javac == null ? "javac" : javac.toAbsolutePath().toString(),
-				"-cp",
-				getClasspath(targetVersionDir + File.separator + "android.jar", "stub.jar",
-						targetVersionDir + File.separator + "optional" + File.separator + "org.apache.http.legacy.jar"),
-				"-d",
-				".." + File.separator + "bin", className.replace('.', File.separatorChar) + ".java",
-				rPath == null ? "" : rPath.toAbsolutePath().toString());
+		int code;
+		if (rPath == null) {
+			code = Util.system(root.resolve("src").toFile(), jdkLocation, out, javac == null ? "javac" : javac.toAbsolutePath().toString(),
+					"-cp",
+					getClasspath(targetVersionDir + File.separator + "android.jar", "stub.jar",
+							targetVersionDir + File.separator + "optional" + File.separator + "org.apache.http.legacy.jar"),
+					"-d",
+					".." + File.separator + "bin", className.replace('.', File.separatorChar) + ".java");
+		} else {
+			code = Util.system(root.resolve("src").toFile(), jdkLocation, out, javac == null ? "javac" : javac.toAbsolutePath().toString(),
+					"-cp",
+					getClasspath(targetVersionDir + File.separator + "android.jar", "stub.jar",
+							targetVersionDir + File.separator + "optional" + File.separator + "org.apache.http.legacy.jar"),
+					"-d",
+					".." + File.separator + "bin", className.replace('.', File.separatorChar) + ".java",
+					rPath.toAbsolutePath().toString());
+		}
 
 		Util.attemptDelete(root.toFile());
 

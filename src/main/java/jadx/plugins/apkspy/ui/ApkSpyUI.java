@@ -142,6 +142,8 @@ public class ApkSpyUI {
 						throw new JadxRuntimeException("Could not update tree after deleting class: ", e);
 					}
 				});
+
+		ChangeCache.getInstance().reset();
 	}
 
 	private static String generateClassName(final JPackage node, final String className) {

@@ -52,8 +52,8 @@ public class ChangeCache {
 
 	public void deleteClass(JavaClass cls) {
 
-		for (JavaClass nesetd : cls.getInnerClasses()) {
-			deleteClass(nesetd);
+		for (JavaClass nested : cls.getInnerClasses()) {
+			deleteClass(nested);
 		}
 
 		// Handle nested classes
@@ -62,9 +62,7 @@ public class ChangeCache {
 		classNameParts.add(c.getName());
 		while (c.getDeclaringClass() != null) {
 			c = c.getDeclaringClass();
-			if (c != null) {
-				classNameParts.add(c.getName());
-			}
+			classNameParts.add(c.getName());
 		}
 
 		Collections.reverse(classNameParts);
@@ -74,5 +72,10 @@ public class ChangeCache {
 		String smaliName = fullName.substring(0, fullName.length() - smaliClass.length()) + smaliClass;
 		CHANGES.remove(fullName);
 		CLASS_DELETIONS.add(smaliName.replace('.', File.separatorChar) + ".smali");
+	}
+
+	public void reset() {
+		CHANGES.clear();
+		CLASS_DELETIONS.clear();
 	}
 }
