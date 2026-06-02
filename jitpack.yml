@@ -1,4 +1,4 @@
 jdk:
   - openjdk17
 install:
-  - ./gradlew clean shadowJar
+  - ./gradlew clean shadowJar publishToMavenLocal
