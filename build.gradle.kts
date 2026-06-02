@@ -152,3 +152,11 @@ sourceSets {
 		resources.srcDir(generateVersionProperties)
 	}
 }
+
+publishing {
+	publications {
+		create<MavenPublication>("shadow") {
+			from(components["shadow"])
+		}
+	}
+}
