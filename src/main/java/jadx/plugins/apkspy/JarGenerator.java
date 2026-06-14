@@ -12,12 +12,12 @@ import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -63,13 +63,8 @@ public class JarGenerator {
 			JarEntry entry = entries.nextElement();
 
 			String entryName = entry.getName();
-			if (entryName.endsWith(".class")) {
+			if (!isExcludedClassEntry(entryName, classes.keySet())) {
 				visitClass(jarFile, entry, tmpDir, classes);
-			} else if (!entry.isDirectory()) {
-				InputStream is = jarFile.getInputStream(entry);
-				Path path = tmpDir.resolve(entryName);
-				path.toFile().getParentFile().mkdirs();
-				FileUtils.copyInputStreamToFile(is, path.toFile());
 			}
 		}
 		jarFile.close();
@@ -78,6 +73,20 @@ public class JarGenerator {
 		pack(tmpDir, output.toPath());
 
 		Util.attemptDelete(tmpDir.toFile());
+	}
+
+	private static boolean isExcludedClassEntry(String entryName, Set<String> excludedClasses) {
+		if (entryName.endsWith(".class")) {
+			String className = entryName.substring(0, entryName.length() - ".class".length());
+			for (String excludedClass : excludedClasses) {
+				String internalName = excludedClass.replace('.', '/');
+				if (className.equals(internalName) || className.startsWith(internalName + "$")) {
+					return true;
+				}
+			}
+			return false;
+		}
+		return true;
 	}
 
 	private static void visitClass(JarFile jarFile, JarEntry entry, Path tmpDir, Map<String, ClassBreakdown> classes)
@@ -95,27 +104,11 @@ public class JarGenerator {
 
 		List<FieldNode> fieldNodes = classNode.fields;
 		for (FieldNode fieldNode : fieldNodes) {
-			for (String className : classes.keySet()) {
-				String internal = className.replace('.', '/');
-				String pkg = internal.substring(0, internal.lastIndexOf('/'));
-				String simple = "ApkSpy$" + internal.substring(internal.lastIndexOf('/') + 1);
-				if (fieldNode.desc.equals("L" + internal + ";")) {
-					fieldNode.desc = "L" + pkg + "/" + simple + ";";
-				}
-			}
 			writer.visitField(fieldNode.access, fieldNode.name, fieldNode.desc, fieldNode.signature, fieldNode.value);
 		}
 
 		List<MethodNode> methodNodes = classNode.methods;
 		for (MethodNode methodNode : methodNodes) {
-			for (String className : classes.keySet()) {
-				String internal = className.replace('.', '/');
-				if (methodNode.desc.contains(internal)) {
-					String pkg = internal.substring(0, internal.lastIndexOf('/'));
-					String simple = "ApkSpy$" + internal.substring(internal.lastIndexOf('/') + 1);
-					methodNode.desc = methodNode.desc.replace(internal, pkg + "/" + simple);
-				}
-			}
 			MethodVisitor visitor = writer.visitMethod(methodNode.access, methodNode.name, methodNode.desc,
 					methodNode.signature, methodNode.exceptions.toArray(new String[0]));
 

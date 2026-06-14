@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -199,16 +198,8 @@ public class ApkSpy {
 					className.substring(0, className.lastIndexOf('.')).replace(".", File.separator)));
 			Files.createDirectories(completePath);
 
-			Path newFile = completePath.resolve("ApkSpy_" + className.substring(className.lastIndexOf('.') + 1) + ".java");// toCompile.getName());
+			Path newFile = completePath.resolve(className.substring(className.lastIndexOf('.') + 1) + ".java");
 			Files.writeString(newFile, content.toString());
-
-			String simpleName = className.substring(className.lastIndexOf('.') + 1);
-			String newFileContent = Files.readString(newFile);
-			newFileContent = newFileContent.replaceAll("(class|interface|enum|@interface) +" + simpleName + "(.*)\\{",
-					"$1 ApkSpy_" + simpleName + "$2{");
-			newFileContent = newFileContent.replaceAll(simpleName + " *\\((.*)\\) *\\{",
-					"ApkSpy_" + simpleName + "($1) {");
-			Files.writeString(newFile, newFileContent);
 		}
 
 		// add R file if generated
@@ -283,63 +274,64 @@ public class ApkSpy {
 		for (Path smaliFolder : smaliFolders) {
 			LOG.info("Searching through: {}", smaliFolder);
 			Files.walk(smaliFolder)
-					.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().startsWith("ApkSpy_"))
+					.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".smali"))
 					.forEach(path -> {
 						try {
-							LOG.info("Merging smali file: {}", path);
-							Path equivalent = null;
-							for (Path otherFolder : destinationFolders) {
-								Path test = Paths.get(otherFolder.toString(),
-										path.toAbsolutePath().toString()
-												.substring(smaliFolder.toAbsolutePath().toString().length())
-												.replace("ApkSpy_", ""));
-								if (Files.isRegularFile(test)) {
-									equivalent = test;
-									break;
-								}
-							}
-							LOG.info("Merging into file: {}", equivalent);
-
-							String modifiedContent = Files.readString(path);
-							modifiedContent = modifiedContent.replace("ApkSpy_", "");
-
-							if (equivalent != null) {
-								String originalContent = Files.readString(equivalent);
-
-								SmaliBreakdown modifiedSmali = SmaliBreakdown.breakdown(modifiedContent);
-
-								ClassBreakdown relative = classes.get(modifiedSmali.getClassName());
-
-								// check to make sure it's not an inner class
-								if (relative != null) {
-									LOG.info("Merging smali for class: {}", modifiedSmali.getClassName());
-
-									List<SmaliMethod> methods = modifiedSmali.getChangedMethods(relative);
-
-									LOG.info("Originally changed methods: {}", relative.getChangedMethods().size());
-									LOG.info("Merging method count: {}", methods.size());
-
-									StringBuilder builder = new StringBuilder(originalContent);
-									for (SmaliMethod method : methods) {
-										SmaliBreakdown originalSmali = SmaliBreakdown.breakdown(builder.toString());
-										SmaliMethod equivalentMethod = originalSmali.getEquivalentMethod(method);
-
-										if (equivalentMethod != null) {
-											builder.delete(equivalentMethod.getStart(), equivalentMethod.getEnd());
-											builder.insert(equivalentMethod.getStart(), method.getContent());
-										}
+							String classname = path.toAbsolutePath().toString()
+									.substring(smaliFolder.toAbsolutePath().toString().length() + 1,
+											path.toAbsolutePath().toString().length() - ".smali".length())
+									.replace(File.separatorChar, '.').replace('$', '.');
+							if (classes.containsKey(classname)) {
+								LOG.info("Merging smali file: {}", path);
+								Path equivalent = null;
+								for (Path otherFolder : destinationFolders) {
+									Path test = Paths.get(otherFolder.toString(),
+											path.toAbsolutePath().toString()
+													.substring(smaliFolder.toAbsolutePath().toString().length()));
+									if (Files.isRegularFile(test)) {
+										equivalent = test;
+										break;
 									}
-
-									Files.writeString(equivalent, builder.toString());
 								}
-							} else {
-								equivalent = Paths.get(smaliFolder.toString().replace("generated", "original"),
-										path.toAbsolutePath().toString()
-												.substring(smaliFolder.toAbsolutePath().toString().length())
-												.replace("ApkSpy_", ""));
-								Files.createDirectories(equivalent.getParent());
-								Files.writeString(equivalent, modifiedContent, StandardOpenOption.CREATE,
-										StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+								LOG.info("Merging into file: {}", equivalent);
+
+								if (equivalent != null) {
+									String modifiedContent = Files.readString(path);
+									String originalContent = Files.readString(equivalent);
+
+									SmaliBreakdown modifiedSmali = SmaliBreakdown.breakdown(modifiedContent);
+
+									ClassBreakdown relative = classes.get(modifiedSmali.getClassName());
+
+									// check to make sure it's not an inner class
+									if (relative != null) {
+										LOG.info("Merging smali for class: {}", modifiedSmali.getClassName());
+
+										List<SmaliMethod> methods = modifiedSmali.getChangedMethods(relative);
+
+										LOG.info("Originally changed methods: {}", relative.getChangedMethods().size());
+										LOG.info("Merging method count: {}", methods.size());
+
+										StringBuilder builder = new StringBuilder(originalContent);
+										for (SmaliMethod method : methods) {
+											SmaliBreakdown originalSmali = SmaliBreakdown.breakdown(builder.toString());
+											SmaliMethod equivalentMethod = originalSmali.getEquivalentMethod(method);
+
+											if (equivalentMethod != null) {
+												builder.delete(equivalentMethod.getStart(), equivalentMethod.getEnd());
+												builder.insert(equivalentMethod.getStart(), method.getContent());
+											}
+										}
+
+										Files.writeString(equivalent, builder.toString());
+									}
+								} else {
+									equivalent = Paths.get(smaliFolder.toString().replace("generated", "original"),
+											path.toAbsolutePath().toString()
+													.substring(smaliFolder.toAbsolutePath().toString().length()));
+									Files.createDirectories(equivalent.getParent());
+									Files.copy(path, equivalent, StandardCopyOption.REPLACE_EXISTING);
+								}
 							}
 						} catch (IOException e) {
 							LOG.error(
