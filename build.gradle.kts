@@ -8,7 +8,7 @@ plugins {
 	`java-library`
 
 	id("com.gradleup.shadow") version "9.4.1"
-	id("com.diffplug.spotless") version "8.5.1"
+	id("com.diffplug.spotless") version "8.7.0"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
@@ -26,12 +26,12 @@ dependencies {
 	// use same versions as jadx-gui
 	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.1")
 	compileOnly("org.apache.commons:commons-lang3:3.20.0")
-	compileOnly("commons-io:commons-io:2.21.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.32")
+	compileOnly("commons-io:commons-io:2.22.0")
+	compileOnly("ch.qos.logback:logback-classic:1.5.34")
 
 	// use same versions as in jadx-java-convert
-	compileOnly("org.ow2.asm:asm:9.9.1")
-	compileOnly("org.ow2.asm:asm-tree:9.9.1")
+	compileOnly("org.ow2.asm:asm:9.10.1")
+	compileOnly("org.ow2.asm:asm-tree:9.10.1")
 
 	implementation("org.apktool:apktool-lib:3.0.2") {
 		// exclude iBotPeaches fork, use provided version of jadx
@@ -44,14 +44,14 @@ dependencies {
 		exclude(group = "org.apache.commons", module = "commons-text")
 	}
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.35")
-	implementation("com.github.javaparser:javaparser-core:3.28.1")
+	implementation("de.femtopedia.dex2jar:dex-tools:2.4.37")
+	implementation("com.github.javaparser:javaparser-core:3.28.2")
 
 	testImplementation("io.github.skylot:jadx-cli:1.5.5")
 	testImplementation("io.github.skylot:jadx-core:1.5.5")
 
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.32")
+	testImplementation("ch.qos.logback:logback-classic:1.5.34")
 	testImplementation("org.assertj:assertj-core:3.27.7")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.3")
