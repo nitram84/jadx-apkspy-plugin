@@ -7,7 +7,7 @@ import java.util.Properties
 plugins {
 	`java-library`
 
-	id("com.gradleup.shadow") version "9.4.1"
+	id("com.gradleup.shadow") version "9.4.3"
 	id("com.diffplug.spotless") version "8.7.0"
 
 	// auto update dependencies with 'useLatestVersions' task
