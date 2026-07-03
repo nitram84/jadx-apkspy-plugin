@@ -19,6 +19,9 @@ jobs:
           java-version: 17
 
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v6
         with:
-          arguments: build
+          gradle-version: wrapper
+
+      - name: Run Tests
+        run: ./gradlew test
