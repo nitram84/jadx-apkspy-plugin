@@ -1,3 +1,7 @@
+[![](https://jitpack.io/v/nitram84/jadx-apkspy-plugin.svg)](https://jitpack.io/#nitram84/jadx-apkspy-plugin)
+![Java 17+](https://img.shields.io/badge/Java-17%2B-blue)
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+
 ### JADX ApkSpy Plugin
 
 This plugin for JADX adds support for editing Java source code of APK's, and then recompiling them. The JADX ApkSpy plugin is a port of the work of @LucasBaizer (https://github.com/LucasBaizer/apkSpy).
@@ -22,7 +26,7 @@ Currently, this plugin is in a proof of concept state.
 * Changes to source code have to be saved externally - this plugin saves changes as modified APK.
 * Editing methods in anonymous classes is not yet supported.
 
-### Building Jadx ApkSpy plugin from source
+### Building JADX ApkSpy plugin from source
 
 JDK 17 or higher must be installed.
 
@@ -60,9 +64,12 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 
 This plugin requires JADX in a version 1.5.5 or greater. Use the latest unstable build of JADX or latest git version if possible.
 
-Install using location id: `github:nitram84:jadx-apkspy-plugin`
+#### Install with JitPack:
 
-In jadx-cli:
+Download the precompiled plugin from https://jitpack.io/com/github/nitram84/jadx-apkspy-plugin/main-SNAPSHOT/jadx-apkspy-plugin-main-SNAPSHOT.jar and save it to your JADX plugin dropins folder:
+
 ```bash
-  jadx plugins --install "github:nitram84:jadx-apkspy-plugin"
+wget https://jitpack.io/com/github/nitram84/jadx-apkspy-plugin/main-SNAPSHOT/jadx-apkspy-plugin-main-SNAPSHOT.jar -o ~/.config/jadx/plugins/dropins/jadx-apkspy-plugin-main-SNAPSHOT.jar
 ```
+
+Use the same command to update the plugin.

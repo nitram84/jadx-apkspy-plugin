@@ -7,6 +7,7 @@ import java.util.Properties
 plugins {
 	`java-library`
 
+	id("maven-publish")
 	id("com.gradleup.shadow") version "9.4.3"
 	id("com.diffplug.spotless") version "8.7.0"
 
@@ -99,6 +100,7 @@ java {
 	targetCompatibility = JavaVersion.VERSION_17
 }
 
+group = "com.github.nitram84"
 version = System.getenv("VERSION") ?: "dev"
 
 tasks.withType<Test>().configureEach {
@@ -147,4 +149,16 @@ sourceSets {
 	main {
 		resources.srcDir(generateVersionProperties)
 	}
+}
+
+publishing {
+	publications {
+		create<MavenPublication>("shadow") {
+			from(components["shadow"])
+		}
+	}
+}
+
+tasks.named("generateMetadataFileForShadowPublication") {
+    mustRunAfter(tasks.named("jar"))
 }
