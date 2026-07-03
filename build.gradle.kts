@@ -53,9 +53,9 @@ dependencies {
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
 	testImplementation("ch.qos.logback:logback-classic:1.5.37")
 	testImplementation("org.assertj:assertj-core:3.27.7")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.0")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.0")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.0")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.1")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.1")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.1")
 }
 
 allprojects {
@@ -101,26 +101,24 @@ java {
 
 version = System.getenv("VERSION") ?: "dev"
 
-tasks {
-	withType(Test::class) {
-		useJUnitPlatform()
-	}
-	val shadowJar =
-		withType(ShadowJar::class) {
-			archiveClassifier.set("") // remove '-all' suffix
-		}
-
-	// copy result jar into "build/dist" directory
-	register<Copy>("dist") {
-		dependsOn(shadowJar)
-		dependsOn(withType(Jar::class))
-
-		from(shadowJar)
-		into(layout.buildDirectory.dir("dist"))
-	}
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
-val generateVersionProperties by tasks.registering {
+val shadowJar = tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>().map { shadowTask ->
+    shadowTask.archiveClassifier.set("") // remove '-all' suffix
+    shadowTask
+}
+
+// copy result jar into "build/dist" directory
+val dist = tasks.register<Copy>("dist") {
+    dependsOn(shadowJar)
+    dependsOn(tasks.withType<Jar>())
+    from(shadowJar)
+    into(layout.buildDirectory.dir("dist"))
+}
+
+val generateVersionProperties = tasks.register("generateVersionProperties") {
 	val outputDir = layout.buildDirectory.dir("generated/resources")
 	val outputFile = outputDir.get().file("versions.properties")
 	outputs.dir(outputDir)
