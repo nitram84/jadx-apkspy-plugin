@@ -8,7 +8,7 @@ plugins {
 	`java-library`
 
 	id("maven-publish")
-	id("com.gradleup.shadow") version "9.5.1"
+	id("com.gradleup.shadow") version "9.6.0"
 	id("com.diffplug.spotless") version "8.8.0"
 
 	// auto update dependencies with 'useLatestVersions' task
@@ -20,15 +20,15 @@ dependencies {
 	compileOnly("org.jetbrains:annotations:26.1.0")
 
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-cli:1.5.5")
-	compileOnly("io.github.skylot:jadx-core:1.5.5")
-	compileOnly("io.github.skylot:jadx-gui:1.5.5")
+	compileOnly("io.github.skylot:jadx-cli:1.5.6")
+	compileOnly("io.github.skylot:jadx-core:1.5.6")
+	compileOnly("io.github.skylot:jadx-gui:1.5.6")
 
 	// use same versions as jadx-gui
 	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.1")
 	compileOnly("org.apache.commons:commons-lang3:3.20.0")
 	compileOnly("commons-io:commons-io:2.22.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.37")
+	compileOnly("ch.qos.logback:logback-classic:1.5.38")
 
 	// use same versions as in jadx-java-convert
 	compileOnly("org.ow2.asm:asm:9.10.1")
@@ -48,15 +48,15 @@ dependencies {
 	implementation("de.femtopedia.dex2jar:dex-tools:2.4.37")
 	implementation("com.github.javaparser:javaparser-core:3.28.2")
 
-	testImplementation("io.github.skylot:jadx-cli:1.5.5")
-	testImplementation("io.github.skylot:jadx-core:1.5.5")
+	testImplementation("io.github.skylot:jadx-cli:1.5.6")
+	testImplementation("io.github.skylot:jadx-core:1.5.6")
 
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.37")
+	testImplementation("ch.qos.logback:logback-classic:1.5.38")
 	testImplementation("org.assertj:assertj-core:3.27.7")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.1")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.1")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.1")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.2")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.2")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.2")
 }
 
 allprojects {
@@ -104,42 +104,45 @@ group = "com.github.nitram84"
 version = System.getenv("VERSION") ?: "dev"
 
 tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
+	useJUnitPlatform()
 }
 
-val shadowJar = tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>().map { shadowTask ->
-    shadowTask.archiveClassifier.set("") // remove '-all' suffix
-    shadowTask
-}
+val shadowJar =
+	tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>().map { shadowTask ->
+		shadowTask.archiveClassifier.set("") // remove '-all' suffix
+		shadowTask
+	}
 
 // copy result jar into "build/dist" directory
-val dist = tasks.register<Copy>("dist") {
-    dependsOn(shadowJar)
-    dependsOn(tasks.withType<Jar>())
-    from(shadowJar)
-    into(layout.buildDirectory.dir("dist"))
-}
+val dist =
+	tasks.register<Copy>("dist") {
+		dependsOn(shadowJar)
+		dependsOn(tasks.withType<Jar>())
+		from(shadowJar)
+		into(layout.buildDirectory.dir("dist"))
+	}
 
-val generateVersionProperties = tasks.register("generateVersionProperties") {
-	val outputDir = layout.buildDirectory.dir("generated/resources")
-	val outputFile = outputDir.get().file("versions.properties")
-	outputs.dir(outputDir)
+val generateVersionProperties =
+	tasks.register("generateVersionProperties") {
+		val outputDir = layout.buildDirectory.dir("generated/resources")
+		val outputFile = outputDir.get().file("versions.properties")
+		outputs.dir(outputDir)
 
-	doLast {
-		val apktoolDep =
-			configurations.implementation.get().dependencies.find {
-				it.group == "org.apktool" && it.name == "apktool-lib"
-			}
+		doLast {
+			val apktoolDep =
+				configurations.implementation.get().dependencies.find {
+					it.group == "org.apktool" && it.name == "apktool-lib"
+				}
 
-		if (apktoolDep != null && apktoolDep.version != null) {
-			val props = Properties()
-			props.setProperty("apktool.version", apktoolDep.version)
-			outputFile.asFile.writer().use { writer ->
-				props.store(writer, "Do not edit - This file is generated.")
+			if (apktoolDep != null && apktoolDep.version != null) {
+				val props = Properties()
+				props.setProperty("apktool.version", apktoolDep.version)
+				outputFile.asFile.writer().use { writer ->
+					props.store(writer, "Do not edit - This file is generated.")
+				}
 			}
 		}
 	}
-}
 
 tasks.processResources {
 	dependsOn(generateVersionProperties)
@@ -160,5 +163,5 @@ publishing {
 }
 
 tasks.named("generateMetadataFileForShadowPublication") {
-    mustRunAfter(tasks.named("jar"))
+	mustRunAfter(tasks.named("jar"))
 }

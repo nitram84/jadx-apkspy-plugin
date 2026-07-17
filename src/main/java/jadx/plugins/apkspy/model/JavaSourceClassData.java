@@ -44,6 +44,11 @@ public class JavaSourceClassData implements IClassData {
 	}
 
 	@Override
+	public int getInputFileOffset() {
+		return 0;
+	}
+
+	@Override
 	public @Nullable String getSuperType() {
 		return "Ljava/lang/Object;";
 	}

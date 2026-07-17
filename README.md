@@ -62,7 +62,7 @@ JADX ApkSpy plugin allows recompiling individual methods of classes, so only sma
 
 ### Install
 
-This plugin requires JADX in a version 1.5.5 or greater. Use the latest unstable build of JADX or latest git version if possible.
+This plugin requires JADX in a version 1.5.6 or greater. Use the latest unstable build of JADX or latest git version if possible.
 
 #### Install with JitPack:
 
