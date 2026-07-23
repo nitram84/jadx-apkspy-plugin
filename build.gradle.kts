@@ -8,7 +8,7 @@ plugins {
 	`java-library`
 
 	id("maven-publish")
-	id("com.gradleup.shadow") version "9.6.0"
+	id("com.gradleup.shadow") version "9.6.1"
 	id("com.diffplug.spotless") version "8.8.0"
 
 	// auto update dependencies with 'useLatestVersions' task
