@@ -9,11 +9,11 @@ plugins {
 
 	id("maven-publish")
 	id("com.gradleup.shadow") version "9.6.1"
-	id("com.diffplug.spotless") version "8.9.0"
+	id("com.diffplug.spotless") version "8.10.0"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("io.github.ben-manes.versions") version "0.59.0"
+	id("io.github.ben-manes.versions") version "0.61.0"
 }
 
 val apkArtifact: Configuration = configurations.create("apkArtifact")
@@ -47,7 +47,7 @@ dependencies {
 		exclude(group = "org.apache.commons", module = "commons-text")
 	}
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.37")
+	implementation("de.femtopedia.dex2jar:dex-tools:2.4.38")
 	implementation("com.github.javaparser:javaparser-core:3.28.2")
 
 	testImplementation("io.github.skylot:jadx-cli:1.5.6")
@@ -56,9 +56,9 @@ dependencies {
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
 	testImplementation("ch.qos.logback:logback-classic:1.5.38")
 	testImplementation("org.assertj:assertj-core:3.27.7")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.2")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.2")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
 
 	apkArtifact("org.beigesoft:beige-uml-android:2.1.11:aligned@apk")
 }
