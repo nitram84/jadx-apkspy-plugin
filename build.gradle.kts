@@ -45,7 +45,7 @@ dependencies {
 		exclude(group = "org.apache.commons", module = "commons-text")
 	}
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.37")
+	implementation("de.femtopedia.dex2jar:dex-tools:2.4.38")
 	implementation("com.github.javaparser:javaparser-core:3.28.2")
 
 	testImplementation("io.github.skylot:jadx-cli:1.5.6")
