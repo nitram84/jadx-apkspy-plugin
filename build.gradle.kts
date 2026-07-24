@@ -34,7 +34,7 @@ dependencies {
 	compileOnly("org.ow2.asm:asm:9.10.1")
 	compileOnly("org.ow2.asm:asm-tree:9.10.1")
 
-	implementation("org.apktool:apktool-lib:3.0.2") {
+	implementation("org.apktool:apktool-lib:3.0.3") {
 		// exclude iBotPeaches fork, use provided version of jadx
 		// Known Issues are https://github.com/iBotPeaches/Apktool/issues/3767 and https://github.com/iBotPeaches/Apktool/issues/3943
 		// See https://github.com/iBotPeaches/Apktool/pull/4027
