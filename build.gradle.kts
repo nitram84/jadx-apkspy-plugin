@@ -13,7 +13,7 @@ plugins {
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("com.github.ben-manes.versions") version "0.54.0"
+	id("com.github.ben-manes.versions") version "0.56.0"
 }
 
 dependencies {
