@@ -33,6 +33,7 @@ import jadx.plugins.apkspy.model.ChangeCache;
 import jadx.plugins.apkspy.model.ClassBreakdown;
 import jadx.plugins.apkspy.model.SmaliBreakdown;
 import jadx.plugins.apkspy.model.SmaliMethod;
+import jadx.plugins.apkspy.rename.smali.SmaliRemapper;
 import jadx.plugins.apkspy.utils.Util;
 
 public class ApkSpy {
@@ -106,7 +107,7 @@ public class ApkSpy {
 		Map<String, ClassBreakdown> classes = Collections.singletonMap(className, content);
 
 		try {
-			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, root);
+			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, decompiler, root);
 		} catch (IOException ex) {
 			out.write(("Failed to generate stub jar: " + ex.getMessage()).getBytes(StandardCharsets.UTF_8));
 			LOG.error("Failed to generate stub jar: ", ex);
@@ -217,8 +218,9 @@ public class ApkSpy {
 		}
 
 		Path stubPath = projectRoot.resolve(Paths.get("app", "libs", "stub.jar"));
+		Files.createDirectories(projectRoot.resolve(Paths.get("app", "libs")));
 		try {
-			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, root);
+			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, decompiler, root);
 		} catch (IOException e) {
 			return false;
 		}
@@ -260,11 +262,22 @@ public class ApkSpy {
 		}
 
 		out.write("Apktool: Decode original apk\n".getBytes(StandardCharsets.UTF_8));
+		File apktoolOriginalDir = new File(smaliDir.toFile(), "original");
 		try {
-			ApktoolWrapper.decode(modifyingApk.toPath(), new File(smaliDir.toFile(), "original"), true);
+			ApktoolWrapper.decode(modifyingApk.toPath(), apktoolOriginalDir, true);
 		} catch (AndrolibException e) {
 			LOG.error("Decoding original apk failed: ", e);
 		}
+
+		// apply deobfuscation to smali (original apk)
+		File smaliOriginal = new File(apktoolOriginalDir, "backup_smali");
+		new File(apktoolOriginalDir, "smali").renameTo(smaliOriginal);
+		Path deobfuscatedSmaliDir = apktoolOriginalDir.toPath().resolve("smali");
+		Files.createDirectories(smaliDir);
+		final SmaliRemapper customRemapper = new SmaliRemapper(decompiler);
+		customRemapper.prepopulateNameCache();
+		customRemapper.remapSmaliFolder(smaliOriginal.toPath(),
+				deobfuscatedSmaliDir);
 
 		List<Path> smaliFolders = Files.list(smaliDir.resolve("generated"))
 				.filter(path -> Files.isDirectory(path) && path.getFileName().toString().startsWith("smali")).collect(Collectors.toList());

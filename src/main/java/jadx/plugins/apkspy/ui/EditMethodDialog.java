@@ -38,8 +38,8 @@ public class EditMethodDialog extends ApkSpyDialog {
 	protected void onSave() {
 		final ClassNode clsNode = methodNode.getParentClass();
 		final String originalCode = decompiler.getRoot().getCodeCache().get(clsNode.getFullName()).getCodeStr();
-		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getName(), originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getName(),
+		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(), originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(),
 				Util.formatSources(this.codeArea.getText()));
 
 		final ClassBreakdown completed = original.mergeImports(changed.getImports())
@@ -65,8 +65,8 @@ public class EditMethodDialog extends ApkSpyDialog {
 	protected ClassBreakdown onPrepareCompile() {
 		final ClassNode clsNode = methodNode.getParentClass();
 		final String originalCode = decompiler.getRoot().getCodeCache().get(clsNode.getFullName()).getCodeStr();
-		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getName(), originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getName(),
+		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(), originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(),
 				Util.formatSources(codeArea.getText()));
 		return this.merge(changed, original);
 	}

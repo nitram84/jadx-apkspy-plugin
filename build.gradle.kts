@@ -9,12 +9,14 @@ plugins {
 
 	id("maven-publish")
 	id("com.gradleup.shadow") version "9.6.1"
-	id("com.diffplug.spotless") version "8.8.0"
+	id("com.diffplug.spotless") version "8.9.0"
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("com.github.ben-manes.versions") version "0.56.0"
+	id("io.github.ben-manes.versions") version "0.59.0"
 }
+
+val apkArtifact: Configuration = configurations.create("apkArtifact")
 
 dependencies {
 	compileOnly("org.jetbrains:annotations:26.1.0")
@@ -57,6 +59,8 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.2")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.2")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.2")
+
+	apkArtifact("org.beigesoft:beige-uml-android:2.1.11:aligned@apk")
 }
 
 allprojects {
@@ -144,8 +148,19 @@ val generateVersionProperties =
 		}
 	}
 
+val copyApkToTestResources =
+	tasks.register<Copy>("copyApkToTestResources") {
+		from(apkArtifact)
+		into(layout.buildDirectory.dir("resources/test"))
+	}
+
 tasks.processResources {
 	dependsOn(generateVersionProperties)
+}
+
+tasks.test {
+	useJUnitPlatform()
+	dependsOn(copyApkToTestResources)
 }
 
 sourceSets {

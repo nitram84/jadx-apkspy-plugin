@@ -1,23 +1,23 @@
 package jadx.plugins.apkspy;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -32,54 +32,60 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.dex2jar.tools.Dex2jarCmd;
 
+import jadx.api.JadxDecompiler;
 import jadx.plugins.apkspy.model.ClassBreakdown;
-import jadx.plugins.apkspy.utils.Util;
+import jadx.plugins.apkspy.rename.jar.JadxASMRenamer;
 
 public class JarGenerator {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JarGenerator.class);
 
-	public static void generateStubJar(File apk, File output, OutputStream out, Map<String, ClassBreakdown> classes, Path tempRoot)
+	public static void generateStubJar(File apk, File output, OutputStream out, Map<String, ClassBreakdown> classes,
+			JadxDecompiler decompiler, Path tempRoot)
 			throws IOException {
 
 		PrintStream oldErr = System.err;
 
+		Path stubTemp = tempRoot.resolve("stub.jar");
+
 		try (PrintStream captureErr = new PrintStream(out, true, StandardCharsets.UTF_8)) {
 			System.setErr(captureErr);
-			Dex2jarCmd.main("-nc", "-o", output.getAbsolutePath(), apk.getAbsolutePath());
+			Dex2jarCmd.main("-nc", "-o", stubTemp.toAbsolutePath().toString(), apk.getAbsolutePath());
 		} finally {
 			System.setErr(oldErr);
 		}
-		if (!output.exists()) {
-			throw new FileNotFoundException(output.getAbsolutePath());
+		if (!stubTemp.toFile().exists()) {
+			throw new FileNotFoundException(stubTemp.toAbsolutePath().toString());
 		}
 
-		Path tmpDir = tempRoot.resolve("dex2jar-classes");
-		Files.createDirectories(tmpDir);
+		final JadxASMRenamer customRemapper = new JadxASMRenamer(Opcodes.ASM9, decompiler);
+		customRemapper.prepopulateNameCache();
 
-		JarFile jarFile = new JarFile(output);
-		Enumeration<JarEntry> entries = jarFile.entries();
-		while (entries.hasMoreElements()) {
-			JarEntry entry = entries.nextElement();
+		try (JarInputStream jis = new JarInputStream(new FileInputStream(stubTemp.toFile()));
+				JarOutputStream jos = new JarOutputStream(new FileOutputStream(output))) {
 
-			String entryName = entry.getName();
-			if (!isExcludedClassEntry(entryName, classes.keySet())) {
-				visitClass(jarFile, entry, tmpDir, classes);
+			JarEntry entry;
+			while ((entry = jis.getNextJarEntry()) != null) {
+				final String entryName = entry.getName();
+
+				if (isExcludedClassEntry(entryName, classes.keySet(), customRemapper)) {
+					continue;
+				}
+				if (entryName.endsWith(".class")) {
+					visitClass(jis, customRemapper, entryName, jos);
+				}
+				jos.closeEntry();
+				jis.closeEntry();
 			}
 		}
-		jarFile.close();
-
-		output.delete();
-		pack(tmpDir, output.toPath());
-
-		Util.attemptDelete(tmpDir.toFile());
+		stubTemp.toFile().delete();
 	}
 
-	private static boolean isExcludedClassEntry(String entryName, Set<String> excludedClasses) {
+	private static boolean isExcludedClassEntry(String entryName, Set<String> excludedClasses, JadxASMRenamer customRemapper) {
 		if (entryName.endsWith(".class")) {
-			String className = entryName.substring(0, entryName.length() - ".class".length());
+			String className = customRemapper.map(entryName.substring(0, entryName.length() - ".class".length()));
 			for (String excludedClass : excludedClasses) {
-				String internalName = excludedClass.replace('.', '/');
+				String internalName = customRemapper.map(excludedClass.replace('.', '/'));
 				if (className.equals(internalName) || className.startsWith(internalName + "$")) {
 					return true;
 				}
@@ -89,54 +95,63 @@ public class JarGenerator {
 		return true;
 	}
 
-	private static void visitClass(JarFile jarFile, JarEntry entry, Path tmpDir, Map<String, ClassBreakdown> classes)
+	private static void visitClass(JarInputStream jis, JadxASMRenamer customRemapper, String entryName, JarOutputStream jos)
 			throws IOException {
 		ClassNode classNode = new ClassNode();
 
-		try (InputStream classFileInputStream = jarFile.getInputStream(entry)) {
+		try (final InputStream classFileInputStream = CloseShieldInputStream.wrap(jis)) {
 			ClassReader classReader = new ClassReader(classFileInputStream);
 			classReader.accept(classNode, 0);
 		}
 
 		ClassWriter writer = new ClassWriter(0);
-		writer.visit(classNode.version, classNode.access, classNode.name, classNode.signature, classNode.superName,
-				classNode.interfaces.toArray(new String[0]));
+		writer.visit(classNode.version, classNode.access, customRemapper.mapType(classNode.name),
+				customRemapper.mapSignature(classNode.signature, false),
+				customRemapper.mapType(classNode.superName),
+				classNode.interfaces.stream().map(customRemapper::mapType).toArray(String[]::new));
 
 		List<FieldNode> fieldNodes = classNode.fields;
 		for (FieldNode fieldNode : fieldNodes) {
-			writer.visitField(fieldNode.access, fieldNode.name, fieldNode.desc, fieldNode.signature, fieldNode.value);
+			writer.visitField(fieldNode.access, customRemapper.mapFieldName(classNode.name, fieldNode.name, fieldNode.desc),
+					customRemapper.mapDesc(fieldNode.desc),
+					customRemapper.mapSignature(fieldNode.signature, true),
+					customRemapper.mapValue(fieldNode.value));
 		}
 
 		List<MethodNode> methodNodes = classNode.methods;
 		for (MethodNode methodNode : methodNodes) {
-			MethodVisitor visitor = writer.visitMethod(methodNode.access, methodNode.name, methodNode.desc,
-					methodNode.signature, methodNode.exceptions.toArray(new String[0]));
+			MethodVisitor visitor =
+					writer.visitMethod(methodNode.access, customRemapper.mapMethodName(classNode.name, methodNode.name, methodNode.desc),
+							customRemapper.mapMethodDesc(methodNode.desc),
+							customRemapper.mapSignature(methodNode.signature, false),
+							methodNode.exceptions.stream().map(customRemapper::mapType).toArray(String[]::new));
 
 			Type returnType = Type.getReturnType(methodNode.desc);
 
 			visitor.visitCode();
-			switch (returnType.getDescriptor()) {
-				case "Z":
-				case "B":
-				case "S":
-				case "I":
-				case "C":
+
+			switch (returnType.getSort()) {
+				case Type.BOOLEAN:
+				case Type.CHAR:
+				case Type.BYTE:
+				case Type.SHORT:
+				case Type.INT:
 					visitor.visitInsn(Opcodes.ICONST_0);
 					visitor.visitInsn(Opcodes.IRETURN);
 					break;
-				case "J":
+				case Type.LONG:
 					visitor.visitInsn(Opcodes.LCONST_0);
 					visitor.visitInsn(Opcodes.LRETURN);
 					break;
-				case "F":
+				case Type.FLOAT:
 					visitor.visitInsn(Opcodes.FCONST_0);
 					visitor.visitInsn(Opcodes.FRETURN);
 					break;
-				case "D":
+				case Type.DOUBLE:
 					visitor.visitInsn(Opcodes.DCONST_0);
 					visitor.visitInsn(Opcodes.DRETURN);
 					break;
-				case "V":
+				case Type.VOID:
 					visitor.visitInsn(Opcodes.RETURN);
 					break;
 				default:
@@ -153,27 +168,12 @@ public class JarGenerator {
 		for (InnerClassNode node : nodes) {
 			writer.visitInnerClass(node.name, node.outerName, node.innerName, node.access);
 		}
-
 		writer.visitEnd();
-		byte[] bytes = writer.toByteArray();
-		Path path = tmpDir.resolve(entry.getName());
-		path.toFile().getParentFile().mkdirs();
-		Files.write(path, bytes);
-	}
 
-	public static void pack(Path pp, Path zipFilePath) throws IOException {
-		Path p = Files.createFile(zipFilePath);
-		try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p))) {
-			Files.walk(pp).filter(path -> !Files.isDirectory(path)).forEach(path -> {
-				ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());
-				try {
-					zs.putNextEntry(zipEntry);
-					Files.copy(path, zs);
-					zs.closeEntry();
-				} catch (IOException e) {
-					LOG.error("Jar creation failed: ", e);
-				}
-			});
-		}
+		final String internalClassName = entryName.substring(0, entryName.length() - 6);
+		final String newClassName = customRemapper.map(internalClassName);
+
+		jos.putNextEntry(new JarEntry(newClassName + ".class"));
+		jos.write(writer.toByteArray());
 	}
 }

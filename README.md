@@ -11,6 +11,7 @@ This plugin for JADX adds support for editing Java source code of APK's, and the
 * Edit methods in JADX
 * Add new classes
 * Delete classes
+* Deobfuscate or rename classes, methods and fields
 * Export changes as modified APK
 
 ### Limitations
@@ -19,14 +20,19 @@ Currently, this plugin is in a proof of concept state.
 
 #### Workarounds needed to recompile sources and to rebuild an APK
 
-* It is necessary to set the "Code cache mode" to 'MEMORY' in preferences in order to recompile modified classes. Other cache modes are not yet supported.
-* Obfuscation and renaming features can not be used together with this plugin.
+* **Disable option "Inline Methods" in preferences** to prevent smali merging issues on saving the modified apk.
+* It is necessary to **set "Code cache mode" to 'MEMORY' in preferences** in order to recompile modified classes. Other cache modes are not yet supported.
 * Only methods are editable. Deleting methods is not supported yet.
 * Adding classes is only possible when "Code cache mode" is set to 'MEMORY' in preferences.
 * Changes to source code have to be saved externally - this plugin saves changes as modified APK.
 * Editing methods in anonymous classes is not yet supported.
 
-### Building JADX ApkSpy plugin from source
+##### Renaming and Deobfuscation
+
+* Toggling deobfuscation resets all modifications without a warning. Make sure you saved your modified apk before toggling deobfuscation.
+* Renaming in edited code sections in not supported. Rename classes first, before editing any classes. If you want to rename a class while having edited a class before, save your modified apk, open your modified apk and continue renaming.
+
+### Building Jadx ApkSpy plugin from source
 
 JDK 17 or higher must be installed.
 
