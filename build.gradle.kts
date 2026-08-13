@@ -30,7 +30,7 @@ dependencies {
 	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.1")
 	compileOnly("org.apache.commons:commons-lang3:3.20.0")
 	compileOnly("commons-io:commons-io:2.22.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.38")
+	compileOnly("ch.qos.logback:logback-classic:1.6.1")
 
 	// use same versions as in jadx-java-convert
 	compileOnly("org.ow2.asm:asm:9.10.1")
@@ -54,7 +54,7 @@ dependencies {
 	testImplementation("io.github.skylot:jadx-core:1.5.6")
 
 	testImplementation("org.apache.commons:commons-lang3:3.20.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.38")
+	testImplementation("ch.qos.logback:logback-classic:1.6.1")
 	testImplementation("org.assertj:assertj-core:3.27.7")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.2")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.2")
