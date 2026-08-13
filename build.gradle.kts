@@ -13,7 +13,7 @@ plugins {
 
 	// auto update dependencies with 'useLatestVersions' task
 	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("io.github.ben-manes.versions") version "0.59.0"
+	id("io.github.ben-manes.versions") version "0.61.0"
 }
 
 val apkArtifact: Configuration = configurations.create("apkArtifact")
