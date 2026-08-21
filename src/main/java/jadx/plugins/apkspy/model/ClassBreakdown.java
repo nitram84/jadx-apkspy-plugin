@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import jadx.plugins.apkspy.model.DiffMatchPatch.Diff;
+import jadx.plugins.apkspy.utils.ClassBreakdownUtils;
 
 public class ClassBreakdown implements Cloneable {
 	public static final int BLOCK_STATIC = 4;
@@ -20,6 +21,7 @@ public class ClassBreakdown implements Cloneable {
 	private List<JavaMethod> changedMethods;
 	private List<JavaMethod> methods;
 	private List<ClassBreakdown> innerClasses;
+	private List<MemberInfo> uninitializedFinalMembers;
 
 	/**
 	 * @param className  full qualified class name
@@ -114,6 +116,7 @@ public class ClassBreakdown implements Cloneable {
 		this.methods = methods;
 		this.changedMethods = methods;
 		this.innerClasses = innerClasses;
+		this.uninitializedFinalMembers = ClassBreakdownUtils.findUninitializedFinalMembers(this.memberVariables);
 	}
 
 	public ClassBreakdown(ClassBreakdown old) {
@@ -125,6 +128,7 @@ public class ClassBreakdown implements Cloneable {
 		this.methods = new ArrayList<>(old.methods);
 		this.changedMethods = new ArrayList<>(old.changedMethods);
 		this.innerClasses = new ArrayList<>(old.innerClasses);
+		this.uninitializedFinalMembers = old.uninitializedFinalMembers;
 	}
 
 	public String getImports() {
@@ -217,6 +221,7 @@ public class ClassBreakdown implements Cloneable {
 
 		ClassBreakdown clone = new ClassBreakdown(this);
 		clone.memberVariables = dmp.diffText2(diffs);
+		clone.uninitializedFinalMembers = ClassBreakdownUtils.findUninitializedFinalMembers(clone.memberVariables);
 		return clone;
 	}
 
@@ -241,8 +246,14 @@ public class ClassBreakdown implements Cloneable {
 			stub.append("    return ' ';\n");
 		} else if (containing.contains("boolean ")) {
 			stub.append("    return false;\n");
-		} else if (containing.contains("void ")
-				|| (containing.endsWith(" " + this.simpleName + "(") && !containing.contains(" " + this.simpleName + " "))) {
+		} else if (containing.contains("void ")) {
+			stub.append("    return;\n");
+		} else if (((containing.startsWith(this.simpleName + "(") || containing.endsWith(" " + this.simpleName + "("))
+				&& !containing.contains(" " + this.simpleName + " "))) {
+			for (MemberInfo uninitializedFinalMembers : this.uninitializedFinalMembers) {
+				stub.append("    ").append(uninitializedFinalMembers.getName()).append(" = ")
+						.append(uninitializedFinalMembers.getType().getDefaultValue()).append(";\n");
+			}
 			stub.append("    return;\n");
 		} else {
 			stub.append("    return null;\n");
