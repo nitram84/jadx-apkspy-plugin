@@ -426,7 +426,7 @@ public class ApkSpy {
 		String[] projectFiles = { "apkspy/default/app/src/main/res/values/styles.xml",
 				"apkspy/default/app/src/main/AndroidManifest.xml",
 				"apkspy/default/app/build.gradle",
-				"apkspy/default/gradle/wrapper/gradle-wrapper.jar.zip", // rename this file later
+				"apkspy/default/gradle/wrapper/gradle-wrapper.jar",
 				"apkspy/default/gradle/wrapper/gradle-wrapper.properties",
 				"apkspy/default/build.gradle",
 				"apkspy/default/gradle.properties",
@@ -444,10 +444,6 @@ public class ApkSpy {
 				if (!destDir.exists()) {
 					destDir.mkdirs();
 				}
-			}
-			// keep jar as a file, protect it against gradle shadow plugin
-			if (targetFilename.endsWith(".jar.zip")) {
-				targetFilename = targetFilename.replace(".jar.zip", ".jar");
 			}
 			try (final InputStream in = ApkSpy.class.getClassLoader().getResourceAsStream(filename)) {
 				final File targetFile = new File(projectRoot, targetFilename);

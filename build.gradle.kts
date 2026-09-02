@@ -112,7 +112,7 @@ tasks.withType<Test>().configureEach {
 }
 
 val shadowJar =
-	tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>().map { shadowTask ->
+	tasks.withType<ShadowJar>().map { shadowTask ->
 		shadowTask.archiveClassifier.set("") // remove '-all' suffix
 		shadowTask
 	}
