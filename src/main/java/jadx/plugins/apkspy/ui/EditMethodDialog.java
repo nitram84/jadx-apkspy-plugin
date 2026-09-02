@@ -36,24 +36,29 @@ public class EditMethodDialog extends ApkSpyDialog {
 
 	@Override
 	protected void onSave() {
-		final ClassNode clsNode = methodNode.getParentClass();
-		final String originalCode = decompiler.getRoot().getCodeCache().get(clsNode.getFullName()).getCodeStr();
-		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(), originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(),
-				Util.formatSources(this.codeArea.getText()));
+		ClassNode clsNode = methodNode.getParentClass();
+		final ClassNode topParentClass;
+		if (clsNode.isInner()) {
+			topParentClass = clsNode.getTopParentClass();
+		} else {
+			topParentClass = clsNode;
+		}
+		String topParentFullName = topParentClass.getClassInfo().getFullName();
+		String originalCode = decompiler.getRoot().getCodeCache().get(topParentFullName).getCodeStr();
+		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), Util.formatSources(this.codeArea.getText()));
 
-		final ClassBreakdown completed = original.mergeImports(changed.getImports())
-				.mergeMethods(changed.getChangedMethods());
+		final ClassBreakdown completed = original.mergeImports(changed.getImports()).addOrReplaceMethods(changed);
 
-		ChangeCache.getInstance().putChange(clsNode.getFullName(), this.merge(changed, original), changed.getMethods().get(0));
+		ChangeCache.getInstance().putChange(topParentFullName, this.merge(changed, original), true);
 
-		decompiler.getRoot().getCodeCache().add(clsNode.getFullName(),
+		decompiler.getRoot().getCodeCache().add(topParentFullName,
 				new SimpleCodeInfo(completed.toString()));
 		final List<ContentPanel> contentPanes = ((MainWindow) mainWindow).getTabbedPane().getTabs();
 		for (final ContentPanel contentPane : contentPanes) {
 			if (contentPane instanceof AbstractCodeContentPanel) {
 				final AbstractCodeArea codeArea = ((AbstractCodeContentPanel) contentPane).getCodeArea();
-				if (codeArea.getNode().getJavaNode().getFullName().equals(clsNode.getFullName())) {
+				if (codeArea.getNode().getJavaNode().getTopParentClass().getFullName().equals(topParentFullName)) {
 					codeArea.refresh();
 					break;
 				}
@@ -64,10 +69,15 @@ public class EditMethodDialog extends ApkSpyDialog {
 	@Override
 	protected ClassBreakdown onPrepareCompile() {
 		final ClassNode clsNode = methodNode.getParentClass();
-		final String originalCode = decompiler.getRoot().getCodeCache().get(clsNode.getFullName()).getCodeStr();
-		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(), originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), clsNode.getAlias(),
-				Util.formatSources(codeArea.getText()));
+		final ClassNode topParentClass;
+		if (clsNode.isInner()) {
+			topParentClass = clsNode.getTopParentClass();
+		} else {
+			topParentClass = clsNode;
+		}
+		final String originalCode = decompiler.getRoot().getCodeCache().get(topParentClass.getClassInfo().getFullName()).getCodeStr();
+		final ClassBreakdown original = ClassBreakdown.breakdown(clsNode.getFullName(), originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(clsNode.getFullName(), Util.formatSources(codeArea.getText()));
 		return this.merge(changed, original);
 	}
 }

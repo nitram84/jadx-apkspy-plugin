@@ -8,6 +8,7 @@ import javax.swing.tree.TreeNode;
 import jadx.api.impl.InMemoryCodeCache;
 import jadx.api.plugins.JadxPluginContext;
 import jadx.api.plugins.gui.JadxGuiContext;
+import jadx.core.dex.info.ClassInfo;
 import jadx.core.dex.nodes.MethodNode;
 import jadx.core.utils.exceptions.JadxRuntimeException;
 import jadx.gui.treemodel.JClass;
@@ -34,8 +35,10 @@ public class ApkSpyUI {
 					if (iCodeNodeRef.getAnnType().equals(AnnType.METHOD)) {
 						if (iCodeNodeRef instanceof MethodNode) {
 							MethodNode methodNode = (MethodNode) iCodeNodeRef;
+							ClassInfo declClass = methodNode.getMethodInfo().getDeclClass();
+							ClassInfo topClass = declClass.isInner() ? declClass.getTopParentClass() : declClass;
 							String code = context.getDecompiler().getRoot().getCodeCache()
-									.getCode(methodNode.getMethodInfo().getDeclClass().getFullName());
+									.getCode(topClass.getFullName());
 
 							String determinedContent = MethodExtractorUtils.extractMethod(code, iCodeNodeRef.getDefPosition());
 

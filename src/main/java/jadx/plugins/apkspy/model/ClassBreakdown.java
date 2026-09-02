@@ -12,7 +12,8 @@ import jadx.plugins.apkspy.model.DiffMatchPatch.Diff;
 import jadx.plugins.apkspy.utils.ClassBreakdownUtils;
 
 public class ClassBreakdown implements Cloneable {
-	public static final int BLOCK_STATIC = 4;
+	private static final int BLOCK_INNER_CLASS = 2;
+	private static final int BLOCK_STATIC = 4;
 	private String className;
 	private String simpleName;
 	private String imports;
@@ -22,92 +23,113 @@ public class ClassBreakdown implements Cloneable {
 	private List<JavaMethod> methods;
 	private List<ClassBreakdown> innerClasses;
 	private List<MemberInfo> uninitializedFinalMembers;
+	private boolean hasChanges = false;
+
+	public static ClassBreakdown breakdown(String className, String content) {
+		return breakdown(className, null, content);
+	}
 
 	/**
-	 * @param className  full qualified class name
-	 * @param simpleName
-	 * @param content    source code formatted with 4 space indentation
+	 * @param className   full qualified class name
+	 * @param parentClass parent class in case of nested classes, otherwise empty
+	 * @param content     source code formatted with 4 space indentation
 	 * @return
 	 */
-	public static ClassBreakdown breakdown(String className, String simpleName, String content) {
+	public static ClassBreakdown breakdown(final String className, final String parentClass, final String content) {
 		String[] split = content.split("\n");
 
-		String imports = "";
+		String packageName = "";
+		String classNameFound = "";
+		String simpleName = "";
+		boolean hasChanges = false;
+		StringBuilder imports = new StringBuilder();
 		String classDeclaration = "";
-		String memberVariables = "";
+		StringBuilder memberVariables = new StringBuilder();
 		List<JavaMethod> methods = new ArrayList<>();
 		List<ClassBreakdown> innerClasses = new ArrayList<>();
-		String currentBlock = "";
+		StringBuilder currentBlock = new StringBuilder();
 		int blockType = 0;
 		boolean allowRoot = true;
 		for (String line : split) {
 			if (allowRoot) {
 				if (!line.startsWith(" ")) {
-					if (line.contains("class ") || line.contains("interface") || line.contains("enum ")
+					if (line.contains("class ") || line.contains("interface ") || line.contains("enum ")
 							|| line.contains("@interface ")) {
 						classDeclaration = line.substring(0, line.indexOf("{")).trim();
-						if (simpleName == null) {
-							Matcher m = Pattern.compile(".*(class|interface|enum|@interface) (.+?) .*").matcher(line);
-							if (m.find()) {
-								simpleName = m.group(2);
-							}
+						Matcher m = Pattern.compile(".*(class|interface|enum|@interface) (.+?) .*").matcher(line);
+						if (m.find()) {
+							simpleName = m.group(2);
+						}
+						if (parentClass == null) {
+							classNameFound = packageName + "." + simpleName;
+						} else {
+							classNameFound = parentClass + "." + simpleName;
+						}
+
+						if (className.equals(classNameFound)) {
+							hasChanges = true;
 						}
 						allowRoot = false;
 					} else {
-						imports += line.trim() + "\n";
+						if (line.startsWith("package ")) {
+							packageName = line.substring(8, line.length() - 1);
+						}
+						imports.append(line.trim()).append("\n");
 					}
 				}
 			} else {
 				if (line.startsWith("    ") && !line.startsWith("     ")) {
 					if (line.trim().equals("}")) {
 						if (blockType == 1) {
-							methods.add(new JavaMethod(currentBlock.trim() + "\n}"));
-						} else if (blockType == 2) {
-							innerClasses.add(ClassBreakdown.breakdown(null, null, currentBlock.trim() + "\n}"));
+							methods.add(new JavaMethod(currentBlock.toString().trim() + "\n}"));
+						} else if (blockType == BLOCK_INNER_CLASS) {
+							innerClasses.add(ClassBreakdown.breakdown(className, classNameFound, currentBlock.toString().trim() + "\n}"));
 						}
-						currentBlock = "";
+						currentBlock = new StringBuilder();
 						blockType = 0;
 					} else if (line.trim().equals("static {")) {
-						currentBlock = "";
+						currentBlock = new StringBuilder();
 						blockType = BLOCK_STATIC;
 					} else if (line.trim().equals("};") && blockType == 3) {
-						memberVariables += currentBlock + "};\n";
-						currentBlock = "";
+						memberVariables.append(currentBlock).append("};\n");
+						currentBlock = new StringBuilder();
 						blockType = 0;
 					} else if (line.trim().endsWith(";")) {
-						memberVariables += line.trim() + "\n";
+						memberVariables.append(currentBlock).append(line.trim()).append("\n");
+						currentBlock = new StringBuilder();
 					} else {
 						if (line.contains("new ")) {
 							blockType = 3;
 						} else if (line.contains("class ")) {
-							blockType = 2;
+							blockType = BLOCK_INNER_CLASS;
 						} else {
 							blockType = 1;
 						}
-						currentBlock += StringUtils.stripEnd(line.substring(4), "\r\n ") + "\n";
+						currentBlock.append(StringUtils.stripEnd(line.substring(4), "\r\n ")).append("\n");
 					}
 				} else if (line.startsWith("     ")) {
-					currentBlock += StringUtils.stripEnd(line.substring(4), "\r\n ") + "\n";
+					currentBlock.append(StringUtils.stripEnd(line.substring(4), "\r\n ")).append("\n");
 				}
 			}
 		}
 
-		if (!currentBlock.isEmpty()) {
+		if (currentBlock.length() > 0) {
 			if (blockType == 1) {
-				methods.add(new JavaMethod(currentBlock));
-			} else if (blockType == 2) {
-				innerClasses.add(ClassBreakdown.breakdown(null, null, currentBlock.trim() + "\n}"));
+				methods.add(new JavaMethod(currentBlock.toString()));
+			} else if (blockType == BLOCK_INNER_CLASS) {
+				innerClasses.add(ClassBreakdown.breakdown(className, classNameFound, currentBlock.toString().trim() + "\n}"));
 			} else if (blockType == 3) {
-				memberVariables += currentBlock + "};\n";
+				memberVariables.append(currentBlock).append("};\n");
 			}
 		}
 
-		return new ClassBreakdown(imports, classDeclaration, className, simpleName, memberVariables, methods,
-				innerClasses);
+		return new ClassBreakdown(imports.toString(), classDeclaration, classNameFound, simpleName, memberVariables.toString(), methods,
+				innerClasses, hasChanges);
 	}
 
 	public ClassBreakdown(String imports, String classDeclaration, String className, String simpleName,
-			String memberVariables, List<JavaMethod> methods, List<ClassBreakdown> innerClasses) {
+			String memberVariables, List<JavaMethod> methods, List<ClassBreakdown> innerClasses, boolean hasChanges) {
+		this.hasChanges = hasChanges;
 		this.imports = imports;
 		this.classDeclaration = classDeclaration;
 		this.className = className;
@@ -128,6 +150,7 @@ public class ClassBreakdown implements Cloneable {
 		this.methods = new ArrayList<>(old.methods);
 		this.changedMethods = new ArrayList<>(old.changedMethods);
 		this.innerClasses = new ArrayList<>(old.innerClasses);
+		this.hasChanges = old.hasChanges();
 		this.uninitializedFinalMembers = old.uninitializedFinalMembers;
 	}
 
@@ -191,28 +214,29 @@ public class ClassBreakdown implements Cloneable {
 		if (newMethod == null) {
 			return this;
 		}
-		ClassBreakdown clone = new ClassBreakdown(this);
-
+		boolean found = false;
 		String header = newMethod.getHeader();
 		for (int i = 0; i < methods.size(); i++) {
 			String otherHeader = methods.get(i).getHeader();
 			if (header.equals(otherHeader)) {
-				clone.methods.set(i, newMethod);
-				return clone;
+				this.methods.set(i, newMethod);
+				found = true;
+				break;
 			}
 		}
 
-		clone.methods.add(newMethod);
-		return clone;
+		if (!found) {
+			this.methods.add(newMethod);
+		}
+		return this;
 	}
 
 	public ClassBreakdown mergeImports(String imports) {
 		DiffMatchPatch dmp = new DiffMatchPatch();
 		List<Diff> diffs = dmp.diffMain(this.imports, imports);
 
-		ClassBreakdown clone = new ClassBreakdown(this);
-		clone.imports = dmp.diffText2(diffs);
-		return clone;
+		this.imports = dmp.diffText2(diffs);
+		return this;
 	}
 
 	public ClassBreakdown mergeMemberVariables(String memberVariables) {
@@ -281,17 +305,30 @@ public class ClassBreakdown implements Cloneable {
 	}
 
 	public ClassBreakdown mergeMethods(List<JavaMethod> methods) {
-		ClassBreakdown breakdown = new ClassBreakdown(this);
 		for (JavaMethod method : methods) {
-			breakdown = breakdown.addOrReplaceMethod(method);
+			this.addOrReplaceMethod(method);
 		}
-		return breakdown;
+		return this;
 	}
 
 	public ClassBreakdown mergeInnerClassStubs(ClassBreakdown original) {
-		ClassBreakdown breakdown = new ClassBreakdown(this);
-		breakdown.innerClasses = original.innerClasses.stream().map(ClassBreakdown::asStub).collect(Collectors.toList());
-		return breakdown;
+		for (ClassBreakdown originalInnerClass : original.getInnerClasses()) {
+			boolean found = false;
+			for (ClassBreakdown innerClass : this.innerClasses) {
+				if (innerClass.getSimpleName().equals(originalInnerClass.getSimpleName())) {
+					innerClass.mergeMethodStubs(originalInnerClass.getChangedMethods());
+					if (innerClass.getInnerClasses() != null && !innerClass.getInnerClasses().isEmpty()) {
+						innerClass.mergeInnerClassStubs(originalInnerClass);
+					}
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				this.getInnerClasses().add(originalInnerClass.asStub());
+			}
+		}
+		return this;
 	}
 
 	public List<ClassBreakdown> getInnerClasses() {
@@ -305,7 +342,12 @@ public class ClassBreakdown implements Cloneable {
 	public ClassBreakdown asStub() {
 		ClassBreakdown breakdown = new ClassBreakdown(this);
 		breakdown.methods = this.methods.stream().map(this::toStub).collect(Collectors.toList());
+		breakdown.innerClasses = this.innerClasses.stream().map(ClassBreakdown::asStub).collect(Collectors.toList());
 		return breakdown;
+	}
+
+	public boolean hasChanges() {
+		return hasChanges;
 	}
 
 	@Override
@@ -341,5 +383,26 @@ public class ClassBreakdown implements Cloneable {
 			}
 		}
 		return str.substring(0, str.length() - 1) + "}";
+	}
+
+	public ClassBreakdown addOrReplaceMethods(ClassBreakdown content) {
+		if (content.hasChanges()) {
+			for (JavaMethod method : content.getChangedMethods()) {
+				this.addOrReplaceMethod(method);
+			}
+		}
+		if (content.getInnerClasses() != null && !content.getInnerClasses().isEmpty()) {
+			for (ClassBreakdown originalInnerClass : content.getInnerClasses()) {
+				for (ClassBreakdown innerClass : this.innerClasses) {
+					if (innerClass.getSimpleName().equals(originalInnerClass.getSimpleName())) {
+						innerClass.mergeMethods(originalInnerClass.getChangedMethods());
+						if (innerClass.getInnerClasses() != null && !innerClass.getInnerClasses().isEmpty()) {
+							innerClass.addOrReplaceMethods(originalInnerClass);
+						}
+					}
+				}
+			}
+		}
+		return this;
 	}
 }

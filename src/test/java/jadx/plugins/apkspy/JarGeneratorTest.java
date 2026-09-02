@@ -1,11 +1,12 @@
-package jadx.plugins.apkspy.integration;
+package jadx.plugins.apkspy;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -15,8 +16,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import jadx.api.JadxArgs;
 import jadx.api.JadxDecompiler;
-import jadx.plugins.apkspy.JarGenerator;
-import jadx.plugins.apkspy.model.ClassBreakdown;
 
 public class JarGeneratorTest {
 	private static JadxDecompiler decompile(final String apkFilename, final String target) {
@@ -64,7 +63,7 @@ public class JarGeneratorTest {
 
 		// no excluded classes
 		try {
-			JarGenerator.generateStubJar(new File(apkFile.toURI()), outputJar, System.out, new HashMap<>(), decompiler,
+			JarGenerator.generateStubJar(new File(apkFile.toURI()), outputJar, System.out, new HashSet<>(), decompiler,
 					jarGenTestFolder.toPath());
 		} catch (final URISyntaxException | IOException e) {
 			Assertions.fail(e);
@@ -78,8 +77,8 @@ public class JarGeneratorTest {
 
 		// exclude "obfuscated" class
 		try {
-			HashMap<String, ClassBreakdown> classes = new HashMap<>();
-			classes.put("org.beigesoft.ui.container.ContainerGuiSrvs", new ClassBreakdown("", "", "", "", "", null, null));
+			Set<String> classes = new HashSet<>();
+			classes.add("org.beigesoft.ui.container.ContainerGuiSrvs");
 			JarGenerator.generateStubJar(new File(apkFile.toURI()), outputJar, System.out, classes, decompiler, jarGenTestFolder.toPath());
 		} catch (final URISyntaxException | IOException e) {
 			Assertions.fail(e);

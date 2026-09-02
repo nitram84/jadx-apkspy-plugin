@@ -31,7 +31,7 @@ public class AddClassDialog extends ApkSpyDialog {
 
 	@Override
 	protected void onSave() {
-		final ClassBreakdown breakdown = ClassBreakdown.breakdown(null, null, Util.formatSources(this.codeArea.getText()));
+		final ClassBreakdown breakdown = ClassBreakdown.breakdown(null, Util.formatSources(this.codeArea.getText()));
 		breakdown.setFullName(this.node.getName() + "." + breakdown.getSimpleName());
 
 		final ClassNode classNode =
@@ -55,12 +55,12 @@ public class AddClassDialog extends ApkSpyDialog {
 		packageNode.update();
 		((MainWindow) mainWindow).reloadTree();
 
-		ChangeCache.getInstance().putChange(breakdown.getFullName(), breakdown, null);
+		ChangeCache.getInstance().putChange(breakdown.getFullName(), breakdown, false);
 	}
 
 	@Override
 	protected ClassBreakdown onPrepareCompile() {
-		final ClassBreakdown breakdown = ClassBreakdown.breakdown(null, null, Util.formatSources(codeArea.getText()));
+		final ClassBreakdown breakdown = ClassBreakdown.breakdown(null, Util.formatSources(codeArea.getText()));
 		breakdown.setFullName(this.node.getName() + "." + breakdown.getSimpleName());
 		return breakdown;
 	}

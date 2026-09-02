@@ -47,15 +47,14 @@ public class ClassBreakdownTest {
 				"    }\n" +
 				"}";
 		final String fullName = "jadx.plugin.apkspy.test.TestClass";
-		final String name = "TestClass";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, name,
-				modified);
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, modified);
 
 		final ClassBreakdown completed = original.mergeImports(changed.getImports())
 				.mergeMethods(changed.getChangedMethods());
 
 		Assertions.assertEquals(expected, completed.toString());
+		Assertions.assertEquals("jadx.plugin.apkspy.test.TestClass", completed.getFullName());
 	}
 
 	@Test
@@ -96,10 +95,8 @@ public class ClassBreakdownTest {
 				"    }\n" +
 				"}";
 		final String fullName = "jadx.plugin.apkspy.test.TestClass";
-		final String name = "TestClass";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
-		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, name,
-				Util.formatSources(modified));
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
+		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, Util.formatSources(modified));
 
 		final ClassBreakdown completed = original.mergeImports(changed.getImports())
 				.mergeMethods(changed.getChangedMethods());
@@ -125,9 +122,9 @@ public class ClassBreakdownTest {
 				"    }\n" +
 				"}";
 		final String fullName = "jadx.plugin.apkspy.test.TestClass";
-		final String name = "TestClass";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
 		Assertions.assertEquals(1, original.getMethods().size());
+		Assertions.assertEquals("TestClass", original.getSimpleName());
 	}
 
 	@Test
@@ -144,13 +141,12 @@ public class ClassBreakdownTest {
 				"    }\n" +
 				"}";
 		final String fullName = "jadx.plugin.apkspy.test.TestClass";
-		final String name = "TestClass";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
 		Assertions.assertEquals(1, original.getMethods().size());
 		Assertions.assertEquals("public String toString() {", original.getMethods().get(0).getHeader());
 		Assertions.assertEquals(1, original.getMethods().get(0).getAnnotations().size());
 		Assertions.assertEquals("@Override // java.lang.Object", original.getMethods().get(0).getAnnotations().get(0));
-
+		Assertions.assertEquals("TestClass", original.getSimpleName());
 	}
 
 	@Test
@@ -185,11 +181,9 @@ public class ClassBreakdownTest {
 				"    }\n" +
 				"}\n";
 		final String fullName = "jadx.plugin.apkspy.test.TestActivity";
-		final String name = "TestActivity";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
 
-		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, name,
-				Util.formatSources(modified));
+		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, Util.formatSources(modified));
 		ClassBreakdown merged = changed.mergeMemberVariables(original.getMemberVariables())
 				.mergeMethodStubs(original.getMethods()).mergeInnerClassStubs(original);
 
@@ -202,6 +196,7 @@ public class ClassBreakdownTest {
 		Assertions.assertEquals(
 				"@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity",
 				javaMethod.getAnnotations().get(1));
+		Assertions.assertEquals("TestActivity", merged.getSimpleName());
 	}
 
 	@Test
@@ -241,10 +236,9 @@ public class ClassBreakdownTest {
 				"}\n";
 		final String fullName = "jadx.plugin.apkspy.test.TestActivity";
 		final String name = "TestActivity";
-		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, name, originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown(fullName, originalCode);
 		System.out.println(Util.formatSources(modified));
-		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, name,
-				Util.formatSources(modified));
+		final ClassBreakdown changed = ClassBreakdown.breakdown(fullName, Util.formatSources(modified));
 		ClassBreakdown merged = changed.mergeMemberVariables(original.getMemberVariables())
 				.mergeMethodStubs(original.getMethods()).mergeInnerClassStubs(original);
 
@@ -260,6 +254,7 @@ public class ClassBreakdownTest {
 		Assertions.assertEquals(
 				"@Override // android.support.v7.app.AppCompatActivity, android.support.v4.app.FragmentActivity, android.support.v4.app.SupportActivity, android.app.Activity",
 				javaMethod.getAnnotations().get(1));
+		Assertions.assertEquals("TestActivity", merged.getSimpleName());
 	}
 
 	@Test
@@ -280,7 +275,7 @@ public class ClassBreakdownTest {
 				"        return new ed();\n" +
 				"    }\n" +
 				"}";
-		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.ed", "ed", originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.ed", originalCode);
 		Assertions.assertEquals("package jadx.plugin.apkspy.test;\n" +
 				"\n" +
 				"/* loaded from: classes.dex */\n" +
@@ -323,7 +318,8 @@ public class ClassBreakdownTest {
 				"        });\n" +
 				"    }\n" +
 				"}";
-		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.TestActivity", "TestActivity", originalCode);
+		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.TestActivity", originalCode);
 		Assertions.assertEquals(1, StringUtils.countMatches(original.asStub().toString(), "@Override"));
+		Assertions.assertEquals("TestActivity", original.getSimpleName());
 	}
 }

@@ -29,14 +29,14 @@ public class ChangeCache {
 		return CHANGES;
 	}
 
-	public void putChange(String className, ClassBreakdown content, JavaMethod method) {
-		if (method == null && CHANGES.containsKey(className)) {
+	public void putChange(String className, ClassBreakdown content, boolean methodsModified) {
+		if (!methodsModified && CHANGES.containsKey(className)) {
 			CHANGES.remove(className, CHANGES.get(className));
 		}
 		if (CHANGES.containsKey(className)) {
 			ClassBreakdown original = CHANGES.get(className);
 
-			CHANGES.put(className, original.addOrReplaceMethod(method).mergeImports(content.getImports()));
+			CHANGES.put(className, original.addOrReplaceMethods(content).mergeImports(content.getImports()));
 		} else {
 			CHANGES.put(className, content);
 		}

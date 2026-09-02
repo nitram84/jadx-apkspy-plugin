@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jadx.api.JavaMethod;
 import jadx.core.dex.info.AccessInfo;
@@ -16,56 +20,208 @@ public final class MethodExtractorUtils {
 	private MethodExtractorUtils() {
 	}
 
-	public static String extractMethod(final String text, final int offset) {
-		final String[] lines = text.split(System.lineSeparator());
-		final StringBuilder extraction = new StringBuilder();
+	private static final Logger log = LoggerFactory.getLogger(MethodExtractorUtils.class);
+	private static final Pattern ANON_CLASS_PATTERN = Pattern.compile("new\\s+[A-Za-z0-9_<>]+\\s*\\([^)]*\\)\\s*\\{");
 
-		int linePos = 0;
+	private static class CodeBlock {
+		public final int startLine;
+		public int endLine;
+		public final int indentLevel;
+		public final String header;
+		public final boolean isAnonymousClass;
+		public final boolean isMethod;
+
+		public CodeBlock(int startLine, int indentLevel, String header, boolean isAnonymousClass, boolean isMethod) {
+			this.startLine = startLine;
+			this.endLine = startLine;
+			this.indentLevel = indentLevel;
+			this.header = header;
+			this.isAnonymousClass = isAnonymousClass;
+			this.isMethod = isMethod;
+		}
+	}
+
+	public static String extractMethod(String javaSource, int position) {
+		if (position < 0 || position > javaSource.length()) {
+			log.error("Position ({}) no in source code (length: {}).", position, javaSource.length());
+			return javaSource;
+		}
+
+		int targetLine = calculateLineFromOffset(javaSource, position);
+
+		String[] lines = javaSource.split("\\r?\\n", -1);
+
+		List<CodeBlock> blocks = parseBlocks(lines);
+		CodeBlock targetMethod = findTargetMethod(blocks, targetLine);
+
+		if (targetMethod == null) {
+			log.warn("No method found at position {} (line: {})", position, targetLine);
+			return javaSource;
+		}
+
+		CodeBlock mainOuterStructure = findMainOuterStructure(blocks, targetMethod);
+
+		StringBuilder output = new StringBuilder();
+		boolean inBlockComment = false;
+		List<String> pendingComments = new ArrayList<>();
+
 		for (int i = 0; i < lines.length; i++) {
+			int currentLineNum = i + 1;
 			String line = lines[i];
-			final int start = linePos;
+			String trimmed = line.trim();
 
-			linePos += line.length();
-			linePos += System.lineSeparator().length();
-
-			String str = line.trim();
-			if (str.isEmpty()) {
+			if (mainOuterStructure == null || currentLineNum < mainOuterStructure.startLine
+					|| currentLineNum > mainOuterStructure.endLine) {
+				output.append(line).append("\n");
 				continue;
 			}
-			if (!line.startsWith("    ")) {
-				if (str.startsWith("package ")) {
-					str += "\n";
-				} else if (str.contains("class ")) {
-					str = "\n" + str;
-				}
 
-				extraction.append(str).append('\n');
+			if (trimmed.startsWith("/*"))
+				inBlockComment = true;
+			boolean wasInComment = inBlockComment;
+			if (trimmed.endsWith("*/"))
+				inBlockComment = false;
+
+			if (wasInComment || trimmed.startsWith("//") || trimmed.startsWith("@")) {
+				pendingComments.add(line);
+				continue;
 			}
 
-			if (line.startsWith("    ") && !line.startsWith("     ") && str.endsWith("{")) {
-				final int closing = Util.findClosingBracket(text, start + line.lastIndexOf('{'));
-				if (offset > start && offset < closing) {
-					// add all annotations and user comments
-					Stack<String> annotationsAndUserComments = new Stack<>();
-					int j = i - 1;
-					for (; j > 0; j--) {
-						if (lines[j].trim().startsWith("@")) {
-							annotationsAndUserComments.push(lines[j]);
-						} else {
+			if (trimmed.isEmpty() && (currentLineNum < targetMethod.startLine || currentLineNum > targetMethod.endLine)) {
+				pendingComments.clear();
+				continue;
+			}
+
+			if (currentLineNum >= targetMethod.startLine && currentLineNum <= targetMethod.endLine) {
+				if (currentLineNum == targetMethod.startLine) {
+					output.append("\n");
+					for (String comment : pendingComments) {
+						output.append(comment).append("\n");
+					}
+					pendingComments.clear();
+				}
+
+				output.append(line).append("\n");
+				continue;
+			}
+
+			boolean keepSkeletonLine = false;
+			for (CodeBlock b : blocks) {
+				if (!b.isMethod && !b.isAnonymousClass) {
+					if (targetMethod.startLine > b.startLine && targetMethod.endLine < b.endLine) {
+						if (currentLineNum == b.startLine || currentLineNum == b.endLine) {
+							keepSkeletonLine = true;
 							break;
 						}
 					}
-					if (j > 0 && lines[j].trim().startsWith("//")) {
-						annotationsAndUserComments.push(lines[j]);
-					}
-					while (!annotationsAndUserComments.empty()) {
-						extraction.append(annotationsAndUserComments.pop()).append('\n');
-					}
+				}
+			}
 
-					final String method = text.substring(start, closing);
-					extraction.append(method);
-					extraction.append("}\n}\n");
-					return extraction.toString();
+			if (keepSkeletonLine) {
+				for (String comment : pendingComments) {
+					output.append(comment).append("\n");
+				}
+				pendingComments.clear();
+				output.append(line).append("\n");
+			} else {
+				pendingComments.clear();
+			}
+		}
+
+		if (!javaSource.endsWith("\n") && output.length() > 0) {
+			output.setLength(output.length() - 1);
+		}
+
+		return output.toString();
+	}
+
+	private static int calculateLineFromOffset(String source, int offset) {
+		int line = 1;
+		for (int i = 0; i < offset; i++) {
+			if (source.charAt(i) == '\n') {
+				line++;
+			}
+		}
+		return line;
+	}
+
+	private static List<CodeBlock> parseBlocks(String[] lines) {
+		List<CodeBlock> allBlocks = new ArrayList<>();
+		Stack<CodeBlock> openBlocks = new Stack<>();
+		boolean inBlockComment = false;
+
+		for (int i = 0; i < lines.length; i++) {
+			int lineNum = i + 1;
+			String line = lines[i];
+			String trimmed = line.trim();
+
+			if (trimmed.startsWith("/*"))
+				inBlockComment = true;
+			boolean wasInComment = inBlockComment;
+			if (trimmed.endsWith("*/"))
+				inBlockComment = false;
+
+			if (wasInComment || trimmed.startsWith("//") || trimmed.isEmpty()) {
+				continue;
+			}
+
+			int opens = countOccurrences(line, '{');
+			int closes = countOccurrences(line, '}');
+
+			if (opens > 0 && !trimmed.startsWith("@")) {
+				int indent = getIndentation(line);
+				boolean isAnon = ANON_CLASS_PATTERN.matcher(line).find();
+
+				boolean isMethod = indent >= 4 && !isAnon
+						&& !line.contains("class ") && !line.contains("interface ") && !line.contains("enum ");
+
+				CodeBlock newBlock = new CodeBlock(lineNum, indent, line, isAnon, isMethod);
+				allBlocks.add(newBlock);
+				openBlocks.push(newBlock);
+			}
+
+			for (int c = 0; c < closes; c++) {
+				if (!openBlocks.isEmpty()) {
+					CodeBlock closed = openBlocks.pop();
+					closed.endLine = lineNum;
+				}
+			}
+		}
+		return allBlocks;
+	}
+
+	private static CodeBlock findTargetMethod(List<CodeBlock> blocks, int targetLine) {
+		CodeBlock selectedMethod = null;
+		CodeBlock containingAnonymous = null;
+
+		for (CodeBlock b : blocks) {
+			if (targetLine >= b.startLine && targetLine <= b.endLine) {
+				if (b.isMethod) {
+					selectedMethod = b;
+				} else if (b.isAnonymousClass) {
+					containingAnonymous = b;
+				}
+			}
+		}
+
+		if (containingAnonymous != null && selectedMethod != null) {
+			if (containingAnonymous.startLine > selectedMethod.startLine && containingAnonymous.endLine < selectedMethod.endLine) {
+				log.info("Ignoring method selection in anonymous class, line {}. Using outer method: {}",
+						containingAnonymous.startLine, selectedMethod.header.trim());
+				return selectedMethod;
+			}
+		}
+
+		if (selectedMethod != null) {
+			return selectedMethod;
+		}
+
+		if (containingAnonymous != null) {
+			log.info("Position is inside an anonymous class without method context (line {}). Searching outer Scope.",
+					containingAnonymous.startLine);
+			for (CodeBlock b : blocks) {
+				if (b.isMethod && containingAnonymous.startLine > b.startLine && containingAnonymous.endLine < b.endLine) {
+					return b;
 				}
 			}
 		}
@@ -73,12 +229,46 @@ public final class MethodExtractorUtils {
 		return null;
 	}
 
+	private static CodeBlock findMainOuterStructure(List<CodeBlock> blocks, CodeBlock targetMethod) {
+		CodeBlock outer = null;
+		for (CodeBlock b : blocks) {
+			if (!b.isMethod && !b.isAnonymousClass) {
+				if (targetMethod.startLine > b.startLine && targetMethod.endLine < b.endLine) {
+					if (outer == null || b.indentLevel < outer.indentLevel) {
+						outer = b;
+					}
+				}
+			}
+		}
+		return outer;
+	}
+
+	private static int getIndentation(String line) {
+		int spaceCount = 0;
+		for (char c : line.toCharArray()) {
+			if (c == ' ')
+				spaceCount++;
+			else
+				break;
+		}
+		return spaceCount;
+	}
+
+	private static int countOccurrences(String text, char target) {
+		int count = 0;
+		for (char c : text.toCharArray()) {
+			if (c == target)
+				count++;
+		}
+		return count;
+	}
+
 	/*
 	 * Locate methods by signature
 	 */
 	public static int findMethodPosition(final JavaMethod method, final String code) throws JadxRuntimeException {
 		final ClassBreakdown breakdown =
-				ClassBreakdown.breakdown(method.getDeclaringClass().getFullName(), method.getDeclaringClass().getName(), code);
+				ClassBreakdown.breakdown(method.getDeclaringClass().getFullName(), code);
 		List<String> imports = extractImportedClasses(breakdown.getImports());
 
 		final StringBuilder sb = new StringBuilder();

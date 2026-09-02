@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -33,14 +32,13 @@ import org.slf4j.LoggerFactory;
 import com.googlecode.dex2jar.tools.Dex2jarCmd;
 
 import jadx.api.JadxDecompiler;
-import jadx.plugins.apkspy.model.ClassBreakdown;
 import jadx.plugins.apkspy.rename.jar.JadxASMRenamer;
 
 public class JarGenerator {
 
 	private static final Logger LOG = LoggerFactory.getLogger(JarGenerator.class);
 
-	public static void generateStubJar(File apk, File output, OutputStream out, Map<String, ClassBreakdown> classes,
+	public static void generateStubJar(File apk, File output, OutputStream out, Set<String> classes,
 			JadxDecompiler decompiler, Path tempRoot)
 			throws IOException {
 
@@ -68,7 +66,7 @@ public class JarGenerator {
 			while ((entry = jis.getNextJarEntry()) != null) {
 				final String entryName = entry.getName();
 
-				if (isExcludedClassEntry(entryName, classes.keySet(), customRemapper)) {
+				if (isExcludedClassEntry(entryName, classes, customRemapper)) {
 					continue;
 				}
 				if (entryName.endsWith(".class")) {

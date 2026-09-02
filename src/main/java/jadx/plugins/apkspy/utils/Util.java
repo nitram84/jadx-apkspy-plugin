@@ -70,25 +70,6 @@ public class Util {
 						|| file.getFileName().toString().equals("adb.exe")).count() > 0;
 	}
 
-	public static int findClosingBracket(String expression, int index) {
-		if (expression.charAt(index) != '{') {
-			return -1;
-		}
-
-		int count = 0;
-		for (int i = index; i < expression.length(); i++) {
-			if (expression.charAt(i) == '{') {
-				count++;
-			} else if (expression.charAt(i) == '}') {
-				if (--count == 0) {
-					return i;
-				}
-			}
-		}
-
-		return -1;
-	}
-
 	// Formatter
 
 	public static String formatSources(final String content) {
@@ -100,7 +81,7 @@ public class Util {
 	}
 
 	/**
-	 * Javaparser formatter reoders line comments before method with annotations. In case of @Override
+	 * Javaparser formatter reorders line comments before method with annotations. In case of @Override
 	 * Jadx has comments after the annotation.
 	 *
 	 * @param input javaparser formatted source code

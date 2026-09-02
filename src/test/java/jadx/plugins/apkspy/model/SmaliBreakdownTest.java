@@ -54,7 +54,7 @@ public class SmaliBreakdownTest {
 				"    return-object v0\n" +
 				".end method\n";
 
-		final ClassBreakdown original = ClassBreakdown.breakdown("apkspy.test.b.a", "a", "package apkspy.test.b;\n" +
+		final ClassBreakdown original = ClassBreakdown.breakdown("apkspy.test.b.a", "package apkspy.test.b;\n" +
 				"\n" +
 				"import android.view.animation.AnimationSet;\n" +
 				"\n" +
@@ -65,7 +65,7 @@ public class SmaliBreakdownTest {
 				"        return null;\n" +
 				"    }\n" +
 				"}");
-		final ClassBreakdown changed = ClassBreakdown.breakdown("apkspy.test.b.a", "a",
+		final ClassBreakdown changed = ClassBreakdown.breakdown("apkspy.test.b.a",
 				Util.formatSources("package apkspy.test.b;\n" +
 						"\n" +
 						"import android.view.animation.AnimationSet;\n" +

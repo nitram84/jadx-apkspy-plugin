@@ -10,7 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -104,7 +105,7 @@ public class ApkSpy {
 		// create stub jar
 		Path stubPath = root.resolve(Paths.get("libs", "stub.jar"));
 		Files.createDirectories(root.resolve("libs"));
-		Map<String, ClassBreakdown> classes = Collections.singletonMap(className, content);
+		Set<String> classes = collectClasses(className, content);
 
 		try {
 			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, decompiler, root);
@@ -150,6 +151,15 @@ public class ApkSpy {
 		Util.attemptDelete(root.toFile());
 
 		return code == 0;
+	}
+
+	private static Set<String> collectClasses(String className, ClassBreakdown content) {
+		Set<String> classes = new HashSet<>();
+		classes.add(className);
+		for (ClassBreakdown inner : content.getInnerClasses()) {
+			classes.addAll(collectClasses(className + "$" + inner.getSimpleName(), inner));
+		}
+		return classes;
 	}
 
 	private static ClassNode findGeneratedRFile(RootNode root) {
@@ -220,7 +230,7 @@ public class ApkSpy {
 		Path stubPath = projectRoot.resolve(Paths.get("app", "libs", "stub.jar"));
 		Files.createDirectories(projectRoot.resolve(Paths.get("app", "libs")));
 		try {
-			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes, decompiler, root);
+			JarGenerator.generateStubJar(modifyingApk, stubPath.toFile(), out, classes.keySet(), decompiler, root);
 		} catch (IOException e) {
 			return false;
 		}
@@ -269,6 +279,8 @@ public class ApkSpy {
 			LOG.error("Decoding original apk failed: ", e);
 		}
 
+		collectInnerClasses(classes, classes.values());
+
 		// apply deobfuscation to smali (original apk)
 		File smaliOriginal = new File(apktoolOriginalDir, "backup_smali");
 		new File(apktoolOriginalDir, "smali").renameTo(smaliOriginal);
@@ -294,7 +306,7 @@ public class ApkSpy {
 									.substring(smaliFolder.toAbsolutePath().toString().length() + 1,
 											path.toAbsolutePath().toString().length() - ".smali".length())
 									.replace(File.separatorChar, '.').replace('$', '.');
-							if (classes.containsKey(classname)) {
+							if (classes.containsKey(classname) && classes.get(classname).hasChanges()) {
 								LOG.info("Merging smali file: {}", path);
 								Path equivalent = null;
 								for (Path otherFolder : destinationFolders) {
@@ -314,7 +326,7 @@ public class ApkSpy {
 
 									SmaliBreakdown modifiedSmali = SmaliBreakdown.breakdown(modifiedContent);
 
-									ClassBreakdown relative = classes.get(modifiedSmali.getClassName());
+									ClassBreakdown relative = classes.get(modifiedSmali.getClassName().replace('$', '.'));
 
 									// check to make sure it's not an inner class
 									if (relative != null) {
@@ -395,6 +407,18 @@ public class ApkSpy {
 				Util.attemptDelete(root.toFile());
 			}
 			return false;
+		}
+	}
+
+	private static void collectInnerClasses(Map<String, ClassBreakdown> map, Collection<ClassBreakdown> entries) {
+		for (ClassBreakdown c : entries) {
+			if (c.getInnerClasses() != null || c.getInnerClasses().isEmpty()) {
+				for (ClassBreakdown inner : c.getInnerClasses()) {
+					map.put(c.getFullName() + "." + inner.getSimpleName(), inner);
+					inner.setFullName(c.getFullName() + "." + inner.getSimpleName());
+				}
+				collectInnerClasses(map, c.getInnerClasses());
+			}
 		}
 	}
 
