@@ -1,6 +1,7 @@
 package jadx.plugins.apkspy.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
@@ -271,7 +272,7 @@ public final class MethodExtractorUtils {
 				ClassBreakdown.breakdown(method.getDeclaringClass().getFullName(), code);
 		List<String> imports = extractImportedClasses(breakdown.getImports());
 
-		final StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder("    ");
 		final AccessInfo accessFlags = method.getAccessFlags();
 		if (accessFlags.isAbstract()) {
 			sb.append("abstract ");
@@ -311,13 +312,13 @@ public final class MethodExtractorUtils {
 			i = code.indexOf(searchPrefix, i);
 			if (i != -1) {
 				int endOfSignature = code.indexOf(" {", i);
-				String signatureLine = code.substring(i + searchPrefix.length(), endOfSignature);
+				String signatureLine = code.substring(i, endOfSignature);
 				endOfSignature = signatureLine.indexOf(") throws");
 				if (endOfSignature > -1) {
 					signatureLine = signatureLine.substring(0, endOfSignature);
 				}
 				signatureLine = signatureLine.replace("...", "[]");
-				final List<String> arguments = extractArguments(cleanAnnotations(signatureLine));
+				final List<String> arguments = extractArguments(cleanAnnotations(extractParamString(signatureLine)));
 				int idx = 0;
 				boolean match = true;
 				for (final ArgType arg : method.getArguments()) {
@@ -359,6 +360,9 @@ public final class MethodExtractorUtils {
 	}
 
 	private static List<String> extractArguments(final String params) throws JadxRuntimeException {
+		if (params == null || params.isEmpty()) {
+			return Collections.emptyList();
+		}
 		final List<String> args = new ArrayList<>();
 		int pos = 0;
 		int i;
@@ -394,23 +398,15 @@ public final class MethodExtractorUtils {
 		return args;
 	}
 
-	private static String cleanAnnotations(String params) {
-		int i = 0;
-		while (i != -1) {
-			i = params.indexOf("(", i);
-			if (i > -1) {
-				final int e = params.indexOf(") ", i);
-				params = params.substring(0, i) + params.substring(e + 1);
-			}
-		}
-		i = 0;
-		while (i != -1) {
-			i = params.indexOf("@", i);
-			if (i > -1) {
-				final int e = params.indexOf(" ", i);
-				params = params.substring(0, i) + params.substring(e + 1);
-			}
-		}
-		return params;
+	private static String extractParamString(String signature) {
+		int openBracketIndex = signature.indexOf('(');
+		int closeBracketIndex = signature.lastIndexOf(')');
+		return signature.substring(openBracketIndex + 1, closeBracketIndex);
+	}
+
+	private static final Pattern ANNOTATION_PATTERN = Pattern.compile("@\\w+(?:\\([^)]*\\))?\\s+");
+
+	private static String cleanAnnotations(String parameters) {
+		return ANNOTATION_PATTERN.matcher(parameters).replaceAll("");
 	}
 }

@@ -61,8 +61,9 @@ public class ApkSpyUI {
 					final JMethod method = (JMethod) node;
 					final JClass parent = ((JMethod) node).getJParent();
 
+					JClass topParentJClass = parent.getRootClass();
 					final String code = context.getDecompiler().getRoot().getCodeCache()
-							.getCode(parent.getFullName());
+							.getCode(topParentJClass.getFullName());
 
 					try {
 						int pos = MethodExtractorUtils.findMethodPosition(method.getJavaMethod(), code);
