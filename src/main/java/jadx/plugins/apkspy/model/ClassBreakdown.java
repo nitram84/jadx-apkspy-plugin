@@ -53,6 +53,10 @@ public class ClassBreakdown implements Cloneable {
 		for (String line : split) {
 			if (allowRoot) {
 				if (!line.startsWith(" ")) {
+					if (line.startsWith("//") || line.startsWith("/*") || (line.startsWith("@") && !line.startsWith("@interface "))) {
+						imports.append(line.trim()).append("\n");
+						continue;
+					}
 					if (line.contains("class ") || line.contains("interface ") || line.contains("enum ")
 							|| line.contains("@interface ")) {
 						classDeclaration = line.substring(0, line.indexOf("{")).trim();

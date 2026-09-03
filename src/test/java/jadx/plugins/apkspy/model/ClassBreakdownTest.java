@@ -322,4 +322,37 @@ public class ClassBreakdownTest {
 		Assertions.assertEquals(1, StringUtils.countMatches(original.asStub().toString(), "@Override"));
 		Assertions.assertEquals("TestActivity", original.getSimpleName());
 	}
+
+	@Test
+	void detectClassesTest() {
+		final String originalCode = "package jadx.plugin.apkspy.test;\n" +
+				"\n" +
+				"\n" +
+				"/* JADX INFO: loaded from: classes.dex */\n" +
+				"public class TestClass {\n" +
+				"    @Deprecated(for = \" class b \")\n" +
+				"    public static class a {\n" +
+				"\n" +
+				"        public void doSomething() {\n" +
+				"        }\n" +
+				"    }\n" +
+				"\n" +
+				"    /* class b */\n" +
+				"    public static class b {\n" +
+				"\n" +
+				"        public void doSomething() {\n" +
+				"        }\n" +
+				"    }\n" +
+				"\n" +
+				"    // class c \n" +
+				"    public static class c {\n" +
+				"\n" +
+				"        public void doSomething() {\n" +
+				"        }\n" +
+				"    }\n" +
+				"}";
+		final ClassBreakdown original = ClassBreakdown.breakdown("jadx.plugin.apkspy.test.TestClass", originalCode);
+		Assertions.assertEquals(3, original.getInnerClasses().size());
+		Assertions.assertEquals("TestClass", original.getSimpleName());
+	}
 }
