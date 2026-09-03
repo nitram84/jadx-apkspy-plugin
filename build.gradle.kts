@@ -8,35 +8,35 @@ plugins {
 	`java-library`
 
 	id("maven-publish")
-	id("com.gradleup.shadow") version "9.6.1"
-	id("com.diffplug.spotless") version "8.10.0"
+	alias(libs.plugins.shadow)
+	alias(libs.plugins.spotless)
 
 	// auto update dependencies with 'useLatestVersions' task
-	id("se.patrikerdes.use-latest-versions") version "0.2.19"
-	id("io.github.ben-manes.versions") version "0.61.0"
+	alias(libs.plugins.use.latest.versions)
+	alias(libs.plugins.ben.manes.versions)
 }
 
 val apkArtifact: Configuration = configurations.create("apkArtifact")
 
 dependencies {
-	compileOnly("org.jetbrains:annotations:26.1.0")
+	compileOnly(libs.annotations)
 
 	// use compile only scope to exclude jadx-core and its dependencies from result jar
-	compileOnly("io.github.skylot:jadx-cli:1.5.6")
-	compileOnly("io.github.skylot:jadx-core:1.5.6")
-	compileOnly("io.github.skylot:jadx-gui:1.5.6")
+	compileOnly(libs.jadx.cli)
+	compileOnly(libs.jadx.core)
+	compileOnly(libs.jadx.gui)
 
 	// use same versions as jadx-gui
-	compileOnly("com.fifesoft:rsyntaxtextarea:3.6.1")
-	compileOnly("org.apache.commons:commons-lang3:3.20.0")
-	compileOnly("commons-io:commons-io:2.22.0")
-	compileOnly("ch.qos.logback:logback-classic:1.5.38")
+	compileOnly(libs.rsyntaxtextarea)
+	compileOnly(libs.commons.lang3)
+	compileOnly(libs.commons.io)
+	compileOnly(libs.logback.classic)
 
 	// use same versions as in jadx-java-convert
-	compileOnly("org.ow2.asm:asm:9.10.1")
-	compileOnly("org.ow2.asm:asm-tree:9.10.1")
+	compileOnly(libs.asm)
+	compileOnly(libs.asm.tree)
 
-	implementation("org.apktool:apktool-lib:3.0.3") {
+	implementation(libs.apktool.lib) {
 		// exclude iBotPeaches fork, use provided version of jadx
 		// Known Issues are https://github.com/iBotPeaches/Apktool/issues/3767 and https://github.com/iBotPeaches/Apktool/issues/3943
 		// See https://github.com/iBotPeaches/Apktool/pull/4027
@@ -47,18 +47,18 @@ dependencies {
 		exclude(group = "org.apache.commons", module = "commons-text")
 	}
 
-	implementation("de.femtopedia.dex2jar:dex-tools:2.4.38")
-	implementation("com.github.javaparser:javaparser-core:3.28.2")
+	implementation(libs.dex.tools)
+	implementation(libs.javaparser)
 
-	testImplementation("io.github.skylot:jadx-cli:1.5.6")
-	testImplementation("io.github.skylot:jadx-core:1.5.6")
+	testImplementation(libs.jadx.cli)
+	testImplementation(libs.jadx.core)
 
-	testImplementation("org.apache.commons:commons-lang3:3.20.0")
-	testImplementation("ch.qos.logback:logback-classic:1.5.38")
-	testImplementation("org.assertj:assertj-core:3.27.7")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+	testImplementation(libs.commons.lang3)
+	testImplementation(libs.logback.classic)
+	testImplementation(libs.assertj.core)
+	testImplementation(libs.junit.jupiter.api)
+	testRuntimeOnly(libs.junit.jupiter.engine)
+	testRuntimeOnly(libs.junit.platform.launcher)
 
 	apkArtifact("org.beigesoft:beige-uml-android:2.1.11:aligned@apk")
 }
