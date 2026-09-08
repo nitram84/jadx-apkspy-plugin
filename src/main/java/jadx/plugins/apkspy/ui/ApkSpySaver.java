@@ -53,6 +53,8 @@ public class ApkSpySaver extends JDialog {
 
 		JCheckBox keepOnErrors = new JCheckBox("Keep intermediate results on errors", true);
 		JCheckBox cleanOnSuccess = new JCheckBox("Clean intermediate results on success", true);
+		JCheckBox createDebugableApk = new JCheckBox("Create a debugable APK", false);
+		JCheckBox addNetworkSecurityConfiguration = new JCheckBox("Add a generic network security configuration", false);
 
 		final JTextField saveLocation = new JTextField(30);
 		final String inputApkFilename = pluginContext.getDecompiler().getArgs().getInputFiles().get(0).toString();
@@ -147,6 +149,12 @@ public class ApkSpySaver extends JDialog {
 					@Override
 					public void run() {
 						try {
+							ApkSaveOptions saveOptions = new ApkSaveOptions();
+							saveOptions.setCleanOnSuccess(cleanOnSuccess.isSelected());
+							saveOptions.setKeepOnErrors(keepOnErrors.isSelected());
+							saveOptions.setCreateDebugableApk(createDebugableApk.isSelected());
+							saveOptions.setAddNetworkSecurityConfiguration(addNetworkSecurityConfiguration.isSelected());
+
 							boolean success = ApkSpy.merge(pluginContext.getDecompiler(),
 									saveLocation.getText(), pluginContext.files().getPluginTempDir(), options.getAndroidSdkPath(),
 									options.getJdkLocation(),
@@ -156,7 +164,7 @@ public class ApkSpySaver extends JDialog {
 											System.out.print((char) b);
 											output.append(Character.toString((char) b));
 										}
-									}, keepOnErrors.isSelected(), cleanOnSuccess.isSelected());
+									}, saveOptions);
 							if (success) {
 								JOptionPane.showMessageDialog(mainWindow,
 										"Successfully created APK!", "apkSpy", JOptionPane.INFORMATION_MESSAGE);
@@ -189,10 +197,14 @@ public class ApkSpySaver extends JDialog {
 		buttons.add(generate);
 		buttons.add(cancel);
 
-		JPanel optionsPanel = new JPanel(new GridLayout(2, 1, 0, 4));
-		optionsPanel.setBorder(new EmptyBorder(0, 10, 10, 10)); // Abstand zu den Rändern
+		JPanel optionsPanel = new JPanel(new GridLayout(6, 1, 0, 4));
+		optionsPanel.setBorder(new EmptyBorder(0, 10, 10, 10));
+		optionsPanel.add(new JLabel("General options:"));
 		optionsPanel.add(keepOnErrors);
 		optionsPanel.add(cleanOnSuccess);
+		optionsPanel.add(new JLabel("Output options:"));
+		optionsPanel.add(createDebugableApk);
+		optionsPanel.add(addNetworkSecurityConfiguration);
 
 		JPanel topContainer = new JPanel(new BorderLayout());
 		topContainer.add(buttons, BorderLayout.NORTH);

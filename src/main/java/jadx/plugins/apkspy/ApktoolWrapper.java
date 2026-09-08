@@ -11,6 +11,8 @@ import brut.androlib.ApkDecoder;
 import brut.androlib.Config;
 import brut.androlib.exceptions.AndrolibException;
 
+import jadx.plugins.apkspy.ui.ApkSaveOptions;
+
 public class ApktoolWrapper {
 
 	private static String apktoolVersion = "";
@@ -44,10 +46,12 @@ public class ApktoolWrapper {
 		new ApkDecoder(apk.toFile(), config).decode(outDir);
 	}
 
-	public static void build(Path apk, String outputLocation)
+	public static void build(Path apk, String outputLocation, ApkSaveOptions saveOptions)
 			throws AndrolibException {
 
 		Config config = getConfig();
+		config.setNetSecConf(saveOptions.isAddNetworkSecurityConfiguration());
+		config.setDebuggable(saveOptions.isCreateDebugableApk());
 		File outFile = new File(outputLocation);
 		new ApkBuilder(apk.toFile(), config).build(outFile);
 	}

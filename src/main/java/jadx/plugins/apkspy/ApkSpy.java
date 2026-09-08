@@ -35,6 +35,7 @@ import jadx.plugins.apkspy.model.ClassBreakdown;
 import jadx.plugins.apkspy.model.SmaliBreakdown;
 import jadx.plugins.apkspy.model.SmaliMethod;
 import jadx.plugins.apkspy.rename.smali.SmaliRemapper;
+import jadx.plugins.apkspy.ui.ApkSaveOptions;
 import jadx.plugins.apkspy.utils.Util;
 
 public class ApkSpy {
@@ -176,9 +177,11 @@ public class ApkSpy {
 
 	public static boolean merge(JadxDecompiler decompiler, String outputLocation, Path baseTempDir, String sdkPath, String jdkLocation,
 			String applicationId,
-			OutputStream out, boolean keepOnError, boolean cleanOnSuccess)
+			OutputStream out, ApkSaveOptions saveOptions)
 			throws IOException, InterruptedException {
 
+		boolean keepOnError = saveOptions.isKeepOnErrors();
+		boolean cleanOnSuccess = saveOptions.isCleanOnSuccess();
 		String apk = decompiler.getArgs().getInputFiles().get(0).toString();
 		LOG.info("Merging: {}", apk);
 		Path root = baseTempDir.resolve("merge_" + System.currentTimeMillis());
@@ -274,7 +277,8 @@ public class ApkSpy {
 		out.write("Apktool: Decode original apk\n".getBytes(StandardCharsets.UTF_8));
 		File apktoolOriginalDir = new File(smaliDir.toFile(), "original");
 		try {
-			ApktoolWrapper.decode(modifyingApk.toPath(), apktoolOriginalDir, true);
+			ApktoolWrapper.decode(modifyingApk.toPath(), apktoolOriginalDir,
+					!saveOptions.isCreateDebugableApk() && !saveOptions.isAddNetworkSecurityConfiguration());
 		} catch (AndrolibException e) {
 			LOG.error("Decoding original apk failed: ", e);
 		}
@@ -384,7 +388,7 @@ public class ApkSpy {
 
 		out.write("Apktool: Build modified apk\n".getBytes(StandardCharsets.UTF_8));
 		try {
-			ApktoolWrapper.build(smaliDir.resolve("original"), outputLocation);
+			ApktoolWrapper.build(smaliDir.resolve("original"), outputLocation, saveOptions);
 		} catch (AndrolibException e) {
 			if (!keepOnError) {
 				Util.attemptDelete(root.toFile());

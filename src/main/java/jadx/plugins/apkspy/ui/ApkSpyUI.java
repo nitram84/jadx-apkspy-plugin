@@ -42,15 +42,13 @@ public class ApkSpyUI {
 
 							String determinedContent = MethodExtractorUtils.extractMethod(code, iCodeNodeRef.getDefPosition());
 
-							if (determinedContent != null) {
-								guiContext.uiRun(() -> {
-									EditMethodDialog dialog =
-											new EditMethodDialog(guiContext.getMainFrame(), options, context, methodNode,
-													"Edit Method");
-									dialog.setCodeAreaContent(determinedContent);
-									dialog.setVisible(true);
-								});
-							}
+							guiContext.uiRun(() -> {
+								EditMethodDialog dialog =
+										new EditMethodDialog(guiContext.getMainFrame(), options, context, methodNode,
+												"Edit Method");
+								dialog.setCodeAreaContent(determinedContent);
+								dialog.setVisible(true);
+							});
 						}
 					}
 				});
@@ -70,15 +68,13 @@ public class ApkSpyUI {
 						if (pos > -1) {
 							final String determinedContent = MethodExtractorUtils.extractMethod(code, pos);
 
-							if (determinedContent != null) {
-								guiContext.uiRun(() -> {
-									final EditMethodDialog dialog =
-											new EditMethodDialog(guiContext.getMainFrame(), options, context,
-													method.getJavaMethod().getMethodNode(), "Edit Method");
-									dialog.setCodeAreaContent(determinedContent);
-									dialog.setVisible(true);
-								});
-							}
+							guiContext.uiRun(() -> {
+								final EditMethodDialog dialog =
+										new EditMethodDialog(guiContext.getMainFrame(), options, context,
+												method.getJavaMethod().getMethodNode(), "Edit Method");
+								dialog.setCodeAreaContent(determinedContent);
+								dialog.setVisible(true);
+							});
 						}
 					} catch (final Exception ignore) { // e.g. constructor nodes without code -> no error
 					}
